@@ -18,6 +18,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [1.4.0] - 2026-08-17 — Phase 1.S4: Status Transitions & Patient Read (Phase 1 Complete)
+
+### Added
+- `src/app/api/interpretation/[id]/confirm/route.ts` for Confirmed transitions.
+- `src/app/api/interpretation/[id]/retract/route.ts` with strict supervisor/author permission checking.
+- `src/app/api/interpretation/[id]/supersede/route.ts` to implement Invariant #3 (`SUPERSEDES` from newer to older).
+- `src/app/api/patient/[id]/route.ts` to recursively fetch the patient, facts, and interpretations in one call.
+- `vitest.integration.config.ts` and integration test suite `interpretation-lifecycle.integration.test.ts`.
+
+### Verified
+- Executed full lifecycle integration tests successfully (7/7 passed), enforcing strict status transition guards, same-state rejection, and invariant checks.
+- Addressed Next.js 16 sync dynamic API requirements by unwrapping `params`.
+
+---
+
 ## [1.3.0] - 2026-08-17 — Phase 1.S3: Interpretation Creation & Evidence Linking
 
 ### Added

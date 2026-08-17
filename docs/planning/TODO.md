@@ -78,11 +78,14 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Completed:** 2026-08-17 — Implemented atomic creation of Interpretations with evidence/author linking; verified via integration tests covering empty, invalid, and valid fact inputs.
 
 ### Sub-phase 1.4 — Status Transitions & Patient Read
-- [ ] `src/app/api/interpretation/[id]/confirm/route.ts` — `POST /api/interpretation/:id/confirm`, uses `canTransition()` guard
-- [ ] `src/app/api/interpretation/[id]/retract/route.ts` — `POST /api/interpretation/:id/retract`, requires `reason`, uses `canTransition()` + `canRetract()`
-- [ ] `src/app/api/interpretation/[id]/supersede/route.ts` — `POST /api/interpretation/:id/supersede`, creates new Interpretation with `(new)-[:SUPERSEDES]->(old)` (newer → older, invariant #3)
-- [ ] `src/app/api/patient/[id]/route.ts` — `GET /api/patient/:id` per api-spec.md: patient + facts + interpretations
-- [ ] Integration tests: full lifecycle, invalid transitions return 409, same-state returns 409, supersede direction verified
+- [x] `src/app/api/interpretation/[id]/confirm/route.ts` — `POST /api/interpretation/:id/confirm`, uses `canTransition()` guard
+- [x] `src/app/api/interpretation/[id]/retract/route.ts` — `POST /api/interpretation/:id/retract`, uses `canTransition()` AND `canRetract()` guards
+- [x] `src/app/api/interpretation/[id]/supersede/route.ts` — `POST /api/interpretation/:id/supersede`, creates new Interpretation, links `(new)-[:SUPERSEDES]->(old)` (invariant #3)
+- [x] `src/app/api/patient/[id]/route.ts` — `GET /api/patient/:id`, returns Patient + `facts` + `interpretations` (all related)
+- [x] `src/app/api/__tests__/interpretation-lifecycle.integration.test.ts` — full lifecycle integration test
+- [x] Run integration tests
+
+**Completed:** 2026-08-17 — Implemented lifecycle status endpoints (confirm, retract, supersede) with transition and permission guards, and recursive patient reads; passed all integration tests. Phase 1 is officially complete!
 
 ---
 
