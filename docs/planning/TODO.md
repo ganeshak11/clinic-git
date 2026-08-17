@@ -1,0 +1,186 @@
+# To-Do: ClinicalGit MVP
+
+Concrete tasks and tools per sub-phase. Pairs with `phases.md` (what each sub-phase must achieve) and `architecture.md` (the data model and queries these tasks implement). Each sub-phase has a detailed implementation plan in `docs/plans/`.
+
+**Completion convention:** After finishing a sub-phase, mark all its tasks `[x]` and add a completion note:
+```
+**Completed:** YYYY-MM-DD — [one-sentence summary of what shipped and what was verified]
+```
+Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion rule in `AGENTS.md`.
+
+---
+
+## Phase 0 — Setup
+
+**Tools:** Next.js (App Router, TypeScript), Neo4j Docker (`neo4j:5`), `neo4j-driver` npm package, Vitest.
+
+### Sub-phase 0.1 — Project Scaffolding & Config
+- [x] Scaffold Next.js app (`create-next-app` with App Router, TypeScript, Tailwind).
+- [x] Enforce `strict: true` and `noUncheckedIndexedAccess: true` in `tsconfig.json`.
+- [x] Verify `.env.local` is in `.gitignore` (security.md).
+- [x] Confirm `npm run dev` serves at `localhost:3000`
+
+**Completed:** 2026-08-17 — Scaffolded Next.js app and hardened TypeScript config; verified clean build and dev server availability.
+
+### Sub-phase 0.2 — Neo4j Connection & Test Infrastructure
+- [x] `docker-compose.yml` for local Neo4j
+- [x] Install `neo4j-driver` and `vitest`
+- [x] Create `src/lib/neo4j.ts` with `withSession` helper (invariant #8)
+- [x] Create `vitest.config.ts` and `src/lib/__tests__/neo4j.test.ts` to test session closure
+- [x] Create `GET /api/health` to test query execution
+- [x] Confirm exit criterion: health endpoint returns ok and testQuery 1
+
+**Completed:** 2026-08-17 — Implemented Neo4j driver singleton, vitest test infrastructure, and verified database connection via the health endpoint.
+
+---
+
+## Phase 1 — Facts & Interpretations
+
+**Tools:** Next.js API routes (`app/api/.../route.ts`), Neo4j Cypher via the driver. No UI, no auth yet — test with `curl`.
+
+### Sub-phase 1.1 — Type System & Transition Guards
+- [ ] `src/lib/types.ts` — all domain types: `Patient`, `Fact`, `Interpretation`, `Doctor` with status union types (`InterpretationStatus`, `DecisionStatus`), never bare `string`
+- [ ] `src/lib/transitions.ts` — `canTransition()` guard for Interpretation status, using the transition map from architecture.md §2.3
+- [ ] `src/lib/permissions.ts` — `canRetract()` check per ADR 0003 (author or supervisor, final `return false`, not `return true`)
+- [ ] `src/lib/__tests__/transitions.test.ts` — every valid transition, every invalid transition, same-state rejection
+- [ ] `src/lib/__tests__/permissions.test.ts` — author succeeds, supervisor succeeds, neither fails
+
+### Sub-phase 1.2 — Database Schema & Fact Endpoint
+- [ ] `src/lib/schema.ts` — Cypher constraint definitions: unique IDs on Patient, Fact, Interpretation, Doctor
+- [ ] `src/app/api/schema/route.ts` — one-time schema setup endpoint (or startup script)
+- [ ] `src/app/api/patient/route.ts` — `POST /api/patient` to create a Patient node (needed before Facts can reference one)
+- [ ] `src/app/api/fact/route.ts` — `POST /api/fact` per api-spec.md: create Fact, link `(Patient)-[:HAS_FACT]->(Fact)`, validate required fields, return 201
+- [ ] No PATCH/PUT/DELETE for Fact — invariant #1 enforced by absence
+- [ ] Integration test: create patient + facts, verify constraints reject duplicate IDs
+
+### Sub-phase 1.3 — Interpretation Creation & Evidence Linking
+- [ ] `src/app/api/interpretation/route.ts` — `POST /api/interpretation` per api-spec.md: create Interpretation, link `(Fact)-[:SUPPORTS]->(Interpretation)` per cited fact, link `(Interpretation)-[:AUTHORED_BY]->(Doctor)`, default status `Hypothesis`
+- [ ] `src/app/api/doctor/route.ts` — `POST /api/doctor` to seed Doctor nodes (needed before Interpretations can reference one)
+- [ ] Validate: `supportingFactIds` must be non-empty → 400; referenced facts must exist → 404
+- [ ] All Cypher parameterized — invariant #5
+- [ ] Integration test: create interpretation citing two facts, verify both SUPPORTS relationships exist
+
+### Sub-phase 1.4 — Status Transitions & Patient Read
+- [ ] `src/app/api/interpretation/[id]/confirm/route.ts` — `POST /api/interpretation/:id/confirm`, uses `canTransition()` guard
+- [ ] `src/app/api/interpretation/[id]/retract/route.ts` — `POST /api/interpretation/:id/retract`, requires `reason`, uses `canTransition()` + `canRetract()`
+- [ ] `src/app/api/interpretation/[id]/supersede/route.ts` — `POST /api/interpretation/:id/supersede`, creates new Interpretation with `(new)-[:SUPERSEDES]->(old)` (newer → older, invariant #3)
+- [ ] `src/app/api/patient/[id]/route.ts` — `GET /api/patient/:id` per api-spec.md: patient + facts + interpretations
+- [ ] Integration tests: full lifecycle, invalid transitions return 409, same-state returns 409, supersede direction verified
+
+---
+
+## Phase 2 — Branching & Merge/Close
+
+**Tools:** Same stack, extending Phase 1 API routes. No new dependencies.
+
+### Sub-phase 2.1 — Branch Creation & Interpretation Linking
+- [ ] Add `Branch` type to `src/lib/types.ts` with `BranchStatus = 'Open' | 'Closed'`
+- [ ] Add unique ID constraint for Branch to `src/lib/schema.ts`
+- [ ] `src/app/api/branch/route.ts` — `POST /api/branch` per api-spec.md
+- [ ] Modify `POST /api/interpretation` to accept optional `branchId`, linking `(Interpretation)-[:BELONGS_TO]->(Branch)`
+- [ ] Integration test: create branch, attach multiple interpretations, verify relationships
+
+### Sub-phase 2.2 — Branch Resolve & Read
+- [ ] `src/app/api/branch/[id]/resolve/route.ts` — `POST /api/branch/:id/resolve` per architecture.md §5: confirmed → `Confirmed`, rest → `RuledOut`, branch → `Closed`
+- [ ] `src/app/api/branch/[id]/route.ts` — `GET /api/branch/:id` per api-spec.md: branch + interpretations
+- [ ] Validate: `confirmedInterpretationId` not on branch → 400; branch already closed → 409
+- [ ] Integration tests: resolve branch, verify ruled-out still queryable, double-resolve returns 409
+
+---
+
+## Phase 3 — Blame
+
+**Tools:** Same stack. Pure Cypher work — get the query right before wiring an endpoint around it.
+
+### Sub-phase 3.1 — Blame Query & Endpoint
+- [ ] Write the blame Cypher query from architecture.md §4, test directly in Neo4j Browser first
+- [ ] Verify `SUPERSEDES` walk direction: `(i)-[:SUPERSEDES*0..5]->(prior)` walks newer → older (correct)
+- [ ] `src/app/api/blame/[interpretationId]/route.ts` — `GET /api/blame/:interpretationId` (targets Interpretation pre-Phase 4)
+- [ ] Bounded variable-length path: `*0..5` not bare `*` — coding-standards.md
+- [ ] Integration test against superseded chain: A → superseded by B → blame on B returns both
+
+### Sub-phase 3.2 — Patient Log & Supersede Chain Tests
+- [ ] `src/app/api/patient/[id]/log/route.ts` — `GET /api/patient/:id/log` per api-spec.md: chronological entries
+- [ ] Entries include type (`fact` | `interpretation`), timestamp, nodeId, summary
+- [ ] Integration tests: verify chronological ordering, verify all node types appear, verify superseded chain in blame returns complete chain
+
+---
+
+## Phase 4 — Decisions
+
+**Tools:** Same stack, no new dependencies.
+
+### Sub-phase 4.1 — Decision Node & Creation
+- [ ] Add `Decision` type with `DecisionStatus = 'Active' | 'Retracted' | 'Superseded'` to types.ts
+- [ ] Add `canTransitionDecision()` to transitions.ts (same pattern as Interpretation)
+- [ ] Add unique ID constraint for Decision to schema.ts
+- [ ] `src/app/api/decision/route.ts` — `POST /api/decision` per api-spec.md: `(Decision)-[:BASED_ON]->(Interpretation)`, must reference `Confirmed` interpretation → 400 otherwise
+- [ ] Integration test: create decision on confirmed interpretation, reject on non-confirmed
+
+### Sub-phase 4.2 — Decision Transitions & Permissions
+- [ ] `src/app/api/decision/[id]/retract/route.ts` — uses `canTransitionDecision()` + `canRetract()`, supervisor-gated
+- [ ] `src/app/api/decision/[id]/supersede/route.ts` — creates new Decision with `SUPERSEDES`
+- [ ] Backfill `canRetract()` enforcement on `POST /api/interpretation/:id/retract` if not already gated (must be server-side per security.md)
+- [ ] Integration tests: decision retract by author, by supervisor, by neither (→ 403), double-retract (→ 409)
+
+### Sub-phase 4.3 — Blame Retargeting & End-to-End Tests
+- [ ] Retarget blame endpoint: `GET /api/blame/[decisionId]` per architecture.md §4 — walks `BASED_ON` → Interpretation → `SUPERSEDES` chain → Facts → Doctor
+- [ ] Update `GET /api/patient/:id/log` to include Decision entries
+- [ ] End-to-end integration test: fact → interpretation → confirm → decision → retract decision → blame resolves full chain
+- [ ] Update api-spec.md if any response shapes changed (doc-sync rule)
+
+---
+
+## Phase 5 — UI
+
+**Tools:** Tailwind CSS, **shadcn/ui** (forms, dialogs, status badges), **React Flow** (branch/graph visualization).
+
+### Sub-phase 5.1 — Design System & Layout Shell
+- [ ] Install and configure shadcn/ui
+- [ ] Design system: color palette, typography, dark mode support
+- [ ] Status badge component: visually distinct colors for all 6 states (Hypothesis, Confirmed, RuledOut, Retracted ≠ Superseded, Active)
+- [ ] App layout shell: sidebar/nav with Patient, Branch, Log, Blame views
+- [ ] Responsive layout
+
+### Sub-phase 5.2 — Patient View
+- [ ] Patient list page
+- [ ] Patient detail page: facts list + interpretations list
+- [ ] Add-fact dialog form (shadcn Dialog + Form) calling `POST /api/fact`
+- [ ] Add-interpretation dialog form calling `POST /api/interpretation` with fact-picker for `supportingFactIds`
+- [ ] Refresh data after mutations
+
+### Sub-phase 5.3 — Branch View
+- [ ] Install React Flow
+- [ ] Branch graph: interpretations as nodes on a branch, visual state per status
+- [ ] "Resolve" action: select interpretation to confirm, call `/api/branch/:id/resolve`
+- [ ] Visual update: confirmed = highlighted, ruled-out = greyed but visible — never removed
+- [ ] Add-interpretation-to-branch flow
+
+### Sub-phase 5.4 — Log & Blame Views
+- [ ] Log view: chronological timeline component consuming `/api/patient/:id/log`
+- [ ] Blame view: given a decision, render the traced chain visually (not JSON)
+- [ ] Chain rendering: decision → interpretation → prior superseded → facts → doctor
+- [ ] Make the chain visually obvious for live demo
+
+---
+
+## Phase 6 — Demo Prep
+
+**Tools:** A seed script (`scripts/seed.ts`), no new dependencies.
+
+### Sub-phase 6.1 — Seed Script
+- [ ] `scripts/seed.ts` — realistic patient case: resolved branch (2-3 ruled-out + 1 confirmed), decision, superseded interpretation in chain
+- [ ] `npm run seed` script in package.json
+- [ ] Data must look clinical, not test-like ("HbA1c 8.4%", not "test-fact-1")
+
+### Sub-phase 6.2 — Rehearsal & Q&A Prep
+- [ ] Full demo click-through: seed → branch with competing diagnoses → resolve → decision → blame
+- [ ] Written answer: "why not FHIR Provenance" — per prd.md §9
+- [ ] Written answer: "who can retract a diagnosis" — per architecture.md §3 / prd.md §8
+- [ ] Time the walkthrough twice minimum
+
+---
+
+## Explicitly not on this list
+
+Postgres, OpenSearch, MinIO/S3 as infrastructure, GraphRAG, RBAC framework, outcome/population analytics. If a task for any of these seems worth adding, that's scope creep — check prd.md §3 and architecture.md §7 before adding it.
