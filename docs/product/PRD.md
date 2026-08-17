@@ -28,13 +28,13 @@ FHIR's `Provenance` resource solves an adjacent but narrower problem — "what r
 - **Outcome / population analytics** ("show all patients where this reasoning path led to bad outcomes"). Requires a real patient corpus with years of follow-up to be statistically meaningful — not buildable or honestly demoable at MVP stage. Mentioned only as a future direction.
 - **GraphRAG / AI reasoning layer.** Deferred until the underlying graph is proven; the AI would only be reading the system, not the point of it.
 - **Full-text search (OpenSearch) across notes/reports.**
-- **Enterprise RBAC / role hierarchy.** A single hard-coded permission rule replaces this (see §6).
+- **Enterprise Role Hierarchy.** We will implement secure authentication (Doctor login via email/password) and a simple Supervisor flag, but complex hospital-wide role hierarchies are out of scope.
 - **Object storage infrastructure.** Attachments are stored in one bucket/disk location and referenced by URL — not a subsystem in its own right.
 - Replacing or interoperating with real EHR systems. This is a standalone demonstration of the data model, not a hospital-deployable product.
 
 ## 4. Target User (for the demo)
 
-A clinician entering and reviewing patient diagnostic history — modeled loosely, not validated with real clinical workflows. The primary "user" for MVP purposes is the reviewer/judge evaluating the reasoning-chain and branching features live.
+A clinician entering and reviewing patient diagnostic history. Unlike earlier drafts, the system features a **real authentication layer**. Doctors must securely log in (email/password) to access the system. No public sign-ups are allowed (accounts are seeded by an admin). Once logged in, doctors can look up patients by their unique ID or search by name.
 
 ## 5. Core Concepts
 
@@ -79,9 +79,10 @@ Active → Retracted   (treatment was wrong, e.g. wrong dosage)
 
 Retracted and Superseded are kept as separate states deliberately: an error correction and a diagnostic refinement are clinically and legally different events, and conflating them undermines the project's core "facts never change, interpretations gain new states" argument.
 
-## 8. Permissions (deliberately minimal for MVP)
+## 8. Permissions (Authentication & Authorization)
 
-No RBAC system. One hard-coded rule: **only the original author or a designated supervising physician may retract an interpretation or decision.** This is a policy check in application code, not an identity/access-management subsystem — building real RBAC is explicitly out of scope.
+The application enforces real authentication. All routes require a valid doctor session (email/password via NextAuth). 
+There is one primary authorization rule: **only the original author or a designated supervising physician (a doctor with the `isSupervisor` flag) may retract an interpretation or decision.** This is a policy check in application code backed by the secure session, ensuring retractions are cryptographically tied to the authorized user.
 
 ## 9. Positioning Against FHIR Provenance
 

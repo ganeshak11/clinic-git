@@ -22,6 +22,11 @@ Each sub-phase has its own implementation plan in `docs/plans/implementation_pla
 **Exit criterion:** `curl localhost:3000/api/health` returns `{ "status": "ok", "neo4j": "connected", "testQuery": 1 }` with Neo4j running via Docker. `npm run test` passes at least one unit test for the `withSession` helper.
 **Plan:** `docs/plans/implementation_plan_p0_s2.md`
 
+### Sub-phase 0.3 — Authentication
+**Goal:** NextAuth setup (Credentials provider), Doctor schema, seed script for initial doctor accounts, middleware route protection.
+**Exit criterion:** Health endpoint connects to Neo4j. NextAuth session creation succeeds. Middleware protects all `/api` routes except health/auth.
+**Plan:** `docs/plans/implementation_plan_p0_s3.md`
+
 ---
 
 ## Phase 1 — Facts & Interpretations (the foundation)

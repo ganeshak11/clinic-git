@@ -137,6 +137,17 @@ Same shape as interpretation supersede, scoped to Decision.
 
 ## Read endpoints
 
+### `GET /api/patient/search`
+```typescript
+// Query params: ?q=name_or_id
+interface PatientSearchResult {
+  id: string;
+  name: string;
+  dateOfBirth: string; // ISO 8601
+}
+// Returns PatientSearchResult[]
+```
+
 ### `GET /api/patient/:id`
 ```typescript
 interface PatientDetail {

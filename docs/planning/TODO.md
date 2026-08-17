@@ -32,6 +32,17 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 
 **Completed:** 2026-08-17 — Implemented Neo4j driver singleton, vitest test infrastructure, and verified database connection via the health endpoint.
 
+### Sub-phase 0.3 — Authentication
+- [x] Install `next-auth` and `bcrypt`
+- [x] Define `Doctor` schema in Neo4j (`email`, `passwordHash`, `name`, `isSupervisor`)
+- [x] Create NextAuth route (`src/app/api/auth/[...nextauth]/route.ts`) with Credentials provider
+- [x] Create `src/proxy.ts` (Next 16 middleware) to protect `/api/` (except auth and health)
+- [x] Create `scripts/seed-doctors.ts` to insert initial doctor accounts (no public signup allowed)
+- [x] Create `GET /api/patient/search` to lookup patients by name or ID
+- [x] Confirm exit criterion: NextAuth login works and returns a valid session token.
+
+**Completed:** 2026-08-17 — Upgraded to real-world auth using NextAuth.js. Created a seeded Doctor account, secured all API routes with a session proxy, and implemented a patient search endpoint.
+
 ---
 
 ## Phase 1 — Facts & Interpretations

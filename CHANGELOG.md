@@ -18,6 +18,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [0.3.0] - 2026-08-17 — Phase 0.S3: Authentication & Patient Search
+
+### Added
+- **Real-World Authentication:** Pivoted from mock auth to a secure `next-auth` session layer using Credentials.
+- `Doctor` node schema in Neo4j holding hashed credentials.
+- `scripts/seed-doctors.ts` which inserts a test doctor account.
+- `src/proxy.ts` (Next 16 Middleware) that automatically rejects/redirects unauthenticated requests to `/api/` routes.
+- `GET /api/patient/search` endpoint to look up patients by ID or name using Neo4j `CONTAINS`.
+
+### Verified
+- `npm run test` continues to pass and type checks cleanly.
+- `seed-doctors.ts` executes correctly via `node --env-file`.
+- Middleware correctly intercepts and protects the API routes (verified via `307 Temporary Redirect` to auth page).
+
+---
+
 ## [0.2.0] - 2026-08-17 — Phase 0.S2: Neo4j Connection & Test Infrastructure
 
 ### Added
