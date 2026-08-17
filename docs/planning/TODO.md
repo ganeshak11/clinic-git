@@ -50,11 +50,13 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Tools:** Next.js API routes (`app/api/.../route.ts`), Neo4j Cypher via the driver. No UI, no auth yet — test with `curl`.
 
 ### Sub-phase 1.1 — Type System & Transition Guards
-- [ ] `src/lib/types.ts` — all domain types: `Patient`, `Fact`, `Interpretation`, `Doctor` with status union types (`InterpretationStatus`, `DecisionStatus`), never bare `string`
-- [ ] `src/lib/transitions.ts` — `canTransition()` guard for Interpretation status, using the transition map from architecture.md §2.3
-- [ ] `src/lib/permissions.ts` — `canRetract()` check per ADR 0003 (author or supervisor, final `return false`, not `return true`)
-- [ ] `src/lib/__tests__/transitions.test.ts` — every valid transition, every invalid transition, same-state rejection
-- [ ] `src/lib/__tests__/permissions.test.ts` — author succeeds, supervisor succeeds, neither fails
+- [x] `src/lib/types.ts` — all domain types: `Patient`, `Fact`, `Interpretation`, `Doctor` with status union types (`InterpretationStatus`, `DecisionStatus`), never bare `string`
+- [x] `src/lib/transitions.ts` — `canTransition()` guard for Interpretation status, using the transition map from architecture.md §2.3
+- [x] `src/lib/permissions.ts` — `canRetract()` check per ADR 0003 (author or supervisor, final `return false`, not `return true`)
+- [x] `src/lib/__tests__/transitions.test.ts` — every valid transition, every invalid transition, same-state rejection
+
+**Completed:** 2026-08-17 — Defined domain types and transition/permission guards; verified with comprehensive unit tests and TypeScript compiler.
+- [x] `src/lib/__tests__/permissions.test.ts` — author succeeds, supervisor succeeds, neither fails
 
 ### Sub-phase 1.2 — Database Schema & Fact Endpoint
 - [ ] `src/lib/schema.ts` — Cypher constraint definitions: unique IDs on Patient, Fact, Interpretation, Doctor

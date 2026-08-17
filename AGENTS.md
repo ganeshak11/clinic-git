@@ -56,13 +56,7 @@ These are architectural decisions, not style preferences. Violating any of them 
    **Completed:** YYYY-MM-DD — [one-sentence summary of what shipped and what was verified]
    ```
 
-3. **Version & Commit** — Use `npm version <version> --no-git-tag-version` to update `package.json`, then commit and tag. The version must match `v<Phase>.<Sub-phase>.0` (e.g. Phase 1, Sub-phase 2 becomes `v1.2.0`).
-   ```bash
-   npm version 1.2.0 --no-git-tag-version
-   git add .
-   git commit -m "feat(P1.S2): complete [sub-phase name]"
-   git tag v1.2.0
-   ```
+3. **Version & Commit** — We have automated the versioning process. Run `./version.sh` in the terminal to automatically bump the version in `package.json`, commit the code, tag the release (e.g., `v1.2.0`), and push both the commit and tag to GitHub. You will be prompted to enter the new version and commit message interactively.
 
 This post-completion write-up is not optional — it's how the next agent session (or a different agent) picks up context without re-reading all the code. If a sub-phase is done but has no write-up, the next session will waste time figuring out what was already built.
 

@@ -18,6 +18,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [1.1.0] - 2026-08-17 — Phase 1.S1: Type System & Transition Guards
+
+### Added
+- `src/lib/types.ts` containing all core domain interfaces (`Fact`, `Interpretation`, `Decision`, `Branch`).
+- Strict union types for `InterpretationStatus` and `DecisionStatus` to prevent bare string errors (invariant #7).
+- `src/lib/transitions.ts` containing state machine guards to prevent invalid transitions and same-state loops.
+- `src/lib/permissions.ts` containing the ADR 0003 retraction permission check.
+
+### Verified
+- Unit tests (`transitions.test.ts` and `permissions.test.ts`) exhaustively cover all logic branches.
+- TypeScript compiler confirms zero usage of `any` or bare strings.
+
+---
+
 ## [0.3.0] - 2026-08-17 — Phase 0.S3: Authentication & Patient Search
 
 ### Added
