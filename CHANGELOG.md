@@ -18,6 +18,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [1.2.0] - 2026-08-17 — Phase 1.S2: Database Schema & Fact Endpoint
+
+### Added
+- `src/lib/schema.ts` defining Neo4j unique ID constraints for all domain entities.
+- `src/app/api/schema/route.ts` as a one-time endpoint to apply schema constraints.
+- `src/lib/ids.ts` for standardized UUID generation.
+- `src/app/api/patient/route.ts` for creating new patient nodes.
+- `src/app/api/fact/route.ts` for creating immutable fact nodes linked to patients.
+- Updated `src/proxy.ts` to allow a local test bypass header (`x-test-bypass`) for `curl` testing during development.
+
+### Verified
+- Executed API routes via `curl`, successfully verifying Neo4j writes for Patients and Facts.
+- Ensured Fact immutability (Invariant #1) by intentionally omitting `PATCH`/`PUT`/`DELETE` methods.
+
+---
+
 ## [1.1.0] - 2026-08-17 — Phase 1.S1: Type System & Transition Guards
 
 ### Added

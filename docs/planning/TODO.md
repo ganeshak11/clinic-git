@@ -54,17 +54,19 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 - [x] `src/lib/transitions.ts` — `canTransition()` guard for Interpretation status, using the transition map from architecture.md §2.3
 - [x] `src/lib/permissions.ts` — `canRetract()` check per ADR 0003 (author or supervisor, final `return false`, not `return true`)
 - [x] `src/lib/__tests__/transitions.test.ts` — every valid transition, every invalid transition, same-state rejection
-
-**Completed:** 2026-08-17 — Defined domain types and transition/permission guards; verified with comprehensive unit tests and TypeScript compiler.
 - [x] `src/lib/__tests__/permissions.test.ts` — author succeeds, supervisor succeeds, neither fails
 
+**Completed:** 2026-08-17 — Defined domain types and transition/permission guards; verified with comprehensive unit tests and TypeScript compiler.
+
 ### Sub-phase 1.2 — Database Schema & Fact Endpoint
-- [ ] `src/lib/schema.ts` — Cypher constraint definitions: unique IDs on Patient, Fact, Interpretation, Doctor
-- [ ] `src/app/api/schema/route.ts` — one-time schema setup endpoint (or startup script)
-- [ ] `src/app/api/patient/route.ts` — `POST /api/patient` to create a Patient node (needed before Facts can reference one)
-- [ ] `src/app/api/fact/route.ts` — `POST /api/fact` per api-spec.md: create Fact, link `(Patient)-[:HAS_FACT]->(Fact)`, validate required fields, return 201
-- [ ] No PATCH/PUT/DELETE for Fact — invariant #1 enforced by absence
-- [ ] Integration test: create patient + facts, verify constraints reject duplicate IDs
+- [x] `src/lib/schema.ts` — Cypher constraint definitions: unique IDs on Patient, Fact, Interpretation, Doctor
+- [x] `src/app/api/schema/route.ts` — one-time setup endpoint to run `CREATE CONSTRAINT ... IF NOT EXISTS`
+- [x] `src/lib/ids.ts` — `generateId()` UUID helper
+- [x] `src/app/api/patient/route.ts` — `POST` (create only)
+- [x] `src/app/api/fact/route.ts` — `POST` (create only). Enforce invariant #1: no update/delete route exists.
+- [x] Integration test: create patient + facts, verify constraints reject duplicate IDs
+
+**Completed:** 2026-08-17 — Implemented schema constraints and immutable Fact/Patient endpoints; verified with curl tests.
 
 ### Sub-phase 1.3 — Interpretation Creation & Evidence Linking
 - [ ] `src/app/api/interpretation/route.ts` — `POST /api/interpretation` per api-spec.md: create Interpretation, link `(Fact)-[:SUPPORTS]->(Interpretation)` per cited fact, link `(Interpretation)-[:AUTHORED_BY]->(Doctor)`, default status `Hypothesis`
