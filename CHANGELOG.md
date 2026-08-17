@@ -18,6 +18,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [1.3.0] - 2026-08-17 — Phase 1.S3: Interpretation Creation & Evidence Linking
+
+### Added
+- `src/app/api/doctor/route.ts` to allow creating Doctor nodes (needed as authors).
+- `src/app/api/interpretation/route.ts` to create Interpretations with strict evidence linking.
+- Cypher query in `POST /api/interpretation` that atomically verifies Patient, Doctor, and all Facts exist, creates the Interpretation, and links `(Fact)-[:SUPPORTS]->(Interpretation)` and `(Interpretation)-[:AUTHORED_BY]->(Doctor)`.
+
+### Verified
+- Ensured interpretations cannot be created without evidence (returns 400 if fact array is empty).
+- Ensured interpretations fail to create if any cited fact ID does not exist in the database (returns 404).
+
+---
+
 ## [1.2.0] - 2026-08-17 — Phase 1.S2: Database Schema & Fact Endpoint
 
 ### Added

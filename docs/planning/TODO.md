@@ -69,11 +69,13 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Completed:** 2026-08-17 — Implemented schema constraints and immutable Fact/Patient endpoints; verified with curl tests.
 
 ### Sub-phase 1.3 — Interpretation Creation & Evidence Linking
-- [ ] `src/app/api/interpretation/route.ts` — `POST /api/interpretation` per api-spec.md: create Interpretation, link `(Fact)-[:SUPPORTS]->(Interpretation)` per cited fact, link `(Interpretation)-[:AUTHORED_BY]->(Doctor)`, default status `Hypothesis`
-- [ ] `src/app/api/doctor/route.ts` — `POST /api/doctor` to seed Doctor nodes (needed before Interpretations can reference one)
-- [ ] Validate: `supportingFactIds` must be non-empty → 400; referenced facts must exist → 404
-- [ ] All Cypher parameterized — invariant #5
-- [ ] Integration test: create interpretation citing two facts, verify both SUPPORTS relationships exist
+- [x] `src/app/api/interpretation/route.ts` — `POST /api/interpretation` per api-spec.md: create Interpretation, link `(Fact)-[:SUPPORTS]->(Interpretation)` per cited fact, link `(Interpretation)-[:AUTHORED_BY]->(Doctor)`, default status `Hypothesis`
+- [x] `src/app/api/doctor/route.ts` — `POST /api/doctor` to seed Doctor nodes (needed before Interpretations can reference one)
+- [x] Validate: `supportingFactIds` must be non-empty → 400; referenced facts must exist → 404
+- [x] All Cypher parameterized — invariant #5
+- [x] Integration test: create interpretation citing two facts, verify both SUPPORTS relationships exist
+
+**Completed:** 2026-08-17 — Implemented atomic creation of Interpretations with evidence/author linking; verified via integration tests covering empty, invalid, and valid fact inputs.
 
 ### Sub-phase 1.4 — Status Transitions & Patient Read
 - [ ] `src/app/api/interpretation/[id]/confirm/route.ts` — `POST /api/interpretation/:id/confirm`, uses `canTransition()` guard
