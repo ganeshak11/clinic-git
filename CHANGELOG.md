@@ -16,6 +16,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 - Updated `AGENTS.md` — added sub-phase context, phase completion rule, expanded directory map, bug pattern reference table.
 - Created 19 implementation plans in `docs/plans/implementation_plan_p{phase}_s{sub}.md`.
 
+## [4.3.1] - 2026-08-18 — Production Readiness Audit Remediation
+
+### Added
+- **Wave 1 (Security):** Hardened all API endpoints with a robust `requireAuth` system using `TEST_AUTH_SECRET` for integration tests. Replaced all raw Cypher queries spanning multiple operations with transactional wrappers (`withWriteTransaction`) for ACID compliance.
+- **Wave 2 (Performance & Idempotency):** Added database schema indexes in `src/lib/schema.ts`, enforced auth on schema execution, and refactored relationship endpoints to use `MERGE` ensuring idempotency. Introduced rate limiting via middleware wrapper.
+- **Wave 3 (Observability):** Integrated `pino` structured logging on all state transition endpoints (`Confirm`, `Retract`, `Supersede`, `Resolve`) recording `actorId` and transition directions. Added pagination to list endpoints.
+- **Wave 4 (Polish):** Added Neo4j `extractNodeProperties` helper function for type-safety. Split health checks into `/api/health/ready` and `/api/health/live`.
+
+### Verified
+- Automated integration test execution across 28 tests flawlessly! All TOCTOU race conditions and partial failures resolved.
+- End-to-end testing confirms system behaves idempotently and reliably.
+
 ---
 
 ## [4.3.0] - 2026-08-18 — Phase 4.S3: Blame Retargeting & End-to-End Tests (Phase 4 Complete)
