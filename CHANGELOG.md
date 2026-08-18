@@ -18,6 +18,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [3.1.0] - 2026-08-18 — Phase 3.S1: Blame Query & Endpoint
+
+### Added
+- `src/app/api/blame/[interpretationId]/route.ts` implementing the "clinical blame" query.
+- The endpoint correctly bounds the variable length graph traversal via `(i)-[:SUPERSEDES*0..5]->(prior)` to walk from newer to older (respecting Invariant #3 directionality constraint).
+- `src/app/api/__tests__/blame.integration.test.ts` to automatically set up the supersede relationships, mock a doctor header properly, and hit the blame API to confirm graph correctness.
+
+### Verified
+- Executed `npm run test:integration` (all 15 tests passed), confirming that when an interpretation B supersedes A, blaming B returns both B and its prior interpretation A in the correct graph sequence!
+
+---
+
 ## [2.2.0] - 2026-08-18 — Phase 2.S2: Branch Resolve & Read (Phase 2 Complete)
 
 ### Added

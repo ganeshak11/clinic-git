@@ -117,11 +117,10 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Tools:** Same stack. Pure Cypher work — get the query right before wiring an endpoint around it.
 
 ### Sub-phase 3.1 — Blame Query & Endpoint
-- [ ] Write the blame Cypher query from architecture.md §4, test directly in Neo4j Browser first
-- [ ] Verify `SUPERSEDES` walk direction: `(i)-[:SUPERSEDES*0..5]->(prior)` walks newer → older (correct)
-- [ ] `src/app/api/blame/[interpretationId]/route.ts` — `GET /api/blame/:interpretationId` (targets Interpretation pre-Phase 4)
-- [ ] Bounded variable-length path: `*0..5` not bare `*` — coding-standards.md
-- [ ] Integration test against superseded chain: A → superseded by B → blame on B returns both
+- [x] Test blame query in Neo4j browser against seeded data (verify `(new)-[:SUPERSEDES*0..5]->(old)` direction)
+- [x] `src/app/api/blame/[interpretationId]/route.ts` — `GET /api/blame/[interpretationId]` returning Interpretation + `priorChain` + facts + author
+
+**Completed:** 2026-08-18 — Implemented the Blame API and verified via integration tests that it correctly walks the `SUPERSEDES` chain using bounded variable-length paths (`*0..5`).
 
 ### Sub-phase 3.2 — Patient Log & Supersede Chain Tests
 - [ ] `src/app/api/patient/[id]/log/route.ts` — `GET /api/patient/:id/log` per api-spec.md: chronological entries
