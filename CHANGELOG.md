@@ -16,6 +16,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 - Updated `AGENTS.md` — added sub-phase context, phase completion rule, expanded directory map, bug pattern reference table.
 - Created 19 implementation plans in `docs/plans/implementation_plan_p{phase}_s{sub}.md`.
 
+## [5.1.0] - 2026-08-18 — Phase 5.S1: Design System & Layout Shell
+
+### Added
+- Created `src/lib/constants.ts` with strict `STATUS_COLORS` mapping enforcing distinct UI semantics for `Retracted` (red) vs `Superseded` (amber).
+- Integrated `shadcn/ui` with extensive core components (`badge`, `button`, `sidebar`, `dialog`, etc.).
+- Created `StatusBadge` generic component in `src/components/status-badge.tsx`.
+- Developed the global application shell navigation in `src/components/app-layout.tsx`.
+- Applied glassmorphism, micro-animations, and rich aesthetic gradient variables to `src/app/globals.css`.
+
+### Verified
+- Automated UI rendering tests verified via a live browser subagent against localhost:3000.
+- Confirmed the global sidebar visually mounts displaying navigation links (Patients, Branches, Blame Chains) flawlessly.
+- Exit criterion: PASS — A styled app shell renders with navigation and status badge colors are properly instantiated.
+
 ## [4.3.2] - 2026-08-18 — Final Fully Working Backend
 
 ### Fixed

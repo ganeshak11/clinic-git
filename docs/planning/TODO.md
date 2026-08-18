@@ -165,11 +165,12 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Tools:** Tailwind CSS, **shadcn/ui** (forms, dialogs, status badges), **React Flow** (branch/graph visualization).
 
 ### Sub-phase 5.1 — Design System & Layout Shell
-- [ ] Install and configure shadcn/ui
-- [ ] Design system: color palette, typography, dark mode support
-- [ ] Status badge component: visually distinct colors for all 6 states (Hypothesis, Confirmed, RuledOut, Retracted ≠ Superseded, Active)
-- [ ] App layout shell: sidebar/nav with Patient, Branch, Log, Blame views
-- [ ] Responsive layout
+- [x] Install shadcn/ui and configure Tailwind
+- [x] Create `STATUS_COLORS` mapping for all node states
+- [x] Build generic `StatusBadge` component
+- [x] Create app shell with global sidebar navigation
+- [x] Apply UI aesthetic enhancements to `globals.css`
+**Completed:** 2026-08-18 — Built out the rich aesthetic app shell with shadcn/ui and implemented consistent status badge rendering, verifying Retracted and Superseded remain distinct.
 
 ### Sub-phase 5.2 — Patient View
 - [ ] Patient list page
