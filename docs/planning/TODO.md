@@ -103,10 +103,12 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Completed:** 2026-08-18 — Implemented Branch creation endpoint and modified Interpretation endpoint to validate and safely link to a Branch atomically. Verified via integration tests.
 
 ### Sub-phase 2.2 — Branch Resolve & Read
-- [ ] `src/app/api/branch/[id]/resolve/route.ts` — `POST /api/branch/[id]/resolve` per architecture.md §5: confirmed → `Confirmed`, rest → `RuledOut`, branch → `Closed`
-- [ ] `src/app/api/branch/[id]/route.ts` — `GET /api/branch/[id]` per api-spec.md: branch + interpretations
-- [ ] Validate: `confirmedInterpretationId` not on branch → 400; branch already closed → 409
-- [ ] Integration tests: resolve branch, verify ruled-out still queryable, double-resolve returns 409
+- [x] `src/app/api/branch/[id]/resolve/route.ts` — `POST /api/branch/[id]/resolve` per architecture.md §5: confirmed → `Confirmed`, rest → `RuledOut`, branch → `Closed`
+- [x] `src/app/api/branch/[id]/route.ts` — `GET /api/branch/[id]` per api-spec.md: branch + interpretations
+- [x] Validate: `confirmedInterpretationId` not on branch → 400; branch already closed → 409
+- [x] Integration tests: resolve branch, verify ruled-out still queryable, double-resolve returns 409
+
+**Completed:** 2026-08-18 — Implemented Branch resolve and read endpoints. Verified atomic resolution where siblings are ruled out, and the branch is closed. Phase 2 is officially complete!
 
 ---
 

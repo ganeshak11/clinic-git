@@ -18,6 +18,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [2.2.0] - 2026-08-18 — Phase 2.S2: Branch Resolve & Read (Phase 2 Complete)
+
+### Added
+- `src/app/api/branch/[id]/resolve/route.ts` to implement the project's core differentiator (branch merge/close logic). It atomically confirms the selected interpretation, rules out all sibling interpretations on the branch, and closes the branch.
+- `src/app/api/branch/[id]/route.ts` to retrieve a branch and all its connected interpretations via a single Cypher query.
+- `src/app/api/__tests__/branch-lifecycle.integration.test.ts` providing full end-to-end branch lifecycle automated testing.
+
+### Verified
+- Executed `npm run test:integration` (all 13 tests passed), successfully simulating creating a branch, attaching multiple interpretations, resolving it, validating rejection cases (`400`, `409`), and querying the ruled-out interpretations post-resolve.
+
+---
+
 ## [2.1.0] - 2026-08-18 — Phase 2.S1: Branch Creation & Interpretation Linking
 
 ### Added
