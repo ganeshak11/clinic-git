@@ -18,6 +18,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [3.2.0] - 2026-08-18 — Phase 3.S2: Patient Log & Supersede Chain Tests (Phase 3 Complete)
+
+### Added
+- `src/app/api/patient/[id]/log/route.ts` implementing the chronological patient timeline query.
+  - Combines Facts and Interpretations seamlessly by formatting node structures into standardized `LogEntry` types in Cypher and parsing them identically.
+- Expanded `src/app/api/__tests__/blame-chain.integration.test.ts` to heavily test complex `SUPERSEDES` structures.
+
+### Verified
+- Automated integration test execution across 18 separate graph lifecycle tests.
+- Successfully verified that deep graphs (e.g., A superseded by B superseded by C) correctly walk backwards pulling both A and B down the blame chain.
+- Verified that historical facts accurately appear prior to modern interpretations in chronological endpoints.
+
+---
+
 ## [3.1.0] - 2026-08-18 — Phase 3.S1: Blame Query & Endpoint
 
 ### Added

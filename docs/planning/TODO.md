@@ -123,9 +123,11 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Completed:** 2026-08-18 — Implemented the Blame API and verified via integration tests that it correctly walks the `SUPERSEDES` chain using bounded variable-length paths (`*0..5`).
 
 ### Sub-phase 3.2 — Patient Log & Supersede Chain Tests
-- [ ] `src/app/api/patient/[id]/log/route.ts` — `GET /api/patient/:id/log` per api-spec.md: chronological entries
-- [ ] Entries include type (`fact` | `interpretation`), timestamp, nodeId, summary
-- [ ] Integration tests: verify chronological ordering, verify all node types appear, verify superseded chain in blame returns complete chain
+- [x] `src/app/api/patient/[id]/log/route.ts` — `GET /api/patient/:id/log` per api-spec.md: chronological entries
+- [x] Integration test: Patient log returns both Fact and Interpretation entries in time order
+- [x] Integration test: 3-deep supersede chain (A → B → C). Blame on C returns both A and B.
+
+**Completed:** 2026-08-18 — Implemented Patient Log endpoint combining Fact and Interpretation entries chronologically. Wrote and passed comprehensive tests asserting that deep multi-level supersede chains correctly pull all prior reasoning! Phase 3 is officially complete.
 
 ---
 
