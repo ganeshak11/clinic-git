@@ -2,13 +2,28 @@ import { describe, it, expect, beforeAll } from 'vitest';
 
 async function apiFetch(path: string, options: RequestInit = {}) {
   const url = `http://localhost:3000${path}`;
+  
+  let bodyObj = {};
+  try { if (options.body) bodyObj = JSON.parse(options.body as string); } catch (e) {}
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-test-auth-secret': 'test-secret',
+    ...options.headers,
+  };
+  
+  if (bodyObj.authorId && !headers['x-test-user-id']) {
+    headers['x-test-user-id'] = bodyObj.authorId;
+  }
+  
+  // For patient/doctor creation, they don't have authorId. Just give them a dummy user ID if none provided.
+  if (!headers['x-test-user-id']) {
+    headers['x-test-user-id'] = 'test-runner-id';
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-test-bypass': 'true',
-      ...options.headers,
-    },
+    headers,
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, data };
@@ -67,13 +82,13 @@ describe('Full lifecycle end-to-end', () => {
     // 4. Confirm interpretation
     await apiFetch(`/api/interpretation/${interpId}/confirm`, {
       method: 'POST',
-      headers: { 'x-user-id': doctorId },
+      headers: { 'x-test-user-id': doctorId },
     });
 
     // 5. Create decision based on confirmed interpretation
     const dRes = await apiFetch('/api/decision', {
       method: 'POST',
-      headers: { 'x-user-id': doctorId },
+      headers: { 'x-test-user-id': doctorId },
       body: JSON.stringify({
         patientId,
         interpretationId: interpId,
@@ -87,7 +102,7 @@ describe('Full lifecycle end-to-end', () => {
     // 6. Retract decision (by author)
     const rRes = await apiFetch(`/api/decision/${decisionId}/retract`, {
       method: 'POST',
-      headers: { 'x-user-id': doctorId, 'x-is-supervisor': 'true' },
+      headers: { 'x-test-user-id': doctorId, 'x-test-is-supervisor': 'true' },
       body: JSON.stringify({ reason: 'Patient improving' }),
     });
     expect(rRes.status).toBe(200);

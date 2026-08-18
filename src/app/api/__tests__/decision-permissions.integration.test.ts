@@ -2,13 +2,28 @@ import { describe, it, expect, beforeAll } from 'vitest';
 
 async function apiFetch(path: string, options: RequestInit = {}) {
   const url = `http://localhost:3000${path}`;
+  
+  let bodyObj = {};
+  try { if (options.body) bodyObj = JSON.parse(options.body as string); } catch (e) {}
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-test-auth-secret': 'test-secret',
+    ...options.headers,
+  };
+  
+  if (bodyObj.authorId && !headers['x-test-user-id']) {
+    headers['x-test-user-id'] = bodyObj.authorId;
+  }
+  
+  // For patient/doctor creation, they don't have authorId. Just give them a dummy user ID if none provided.
+  if (!headers['x-test-user-id']) {
+    headers['x-test-user-id'] = 'test-runner-id';
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-test-bypass': 'true',
-      ...options.headers,
-    },
+    headers,
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, data };
@@ -71,7 +86,7 @@ describe('Decision permissions & transitions', () => {
 
     await apiFetch(`/api/interpretation/${interpId}/confirm`, {
       method: 'POST',
-      headers: { 'x-user-id': doctorAuthorId },
+      headers: { 'x-test-user-id': doctorAuthorId },
     });
   });
 
@@ -81,7 +96,7 @@ describe('Decision permissions & transitions', () => {
     beforeAll(async () => {
       const dRes = await apiFetch('/api/decision', {
         method: 'POST',
-        headers: { 'x-user-id': doctorAuthorId },
+        headers: { 'x-test-user-id': doctorAuthorId },
         body: JSON.stringify({
           patientId,
           interpretationId: interpId,
@@ -95,7 +110,7 @@ describe('Decision permissions & transitions', () => {
     it('rejects non-author, non-supervisor → 403', async () => {
       const res = await apiFetch(`/api/decision/${decisionId}/retract`, {
         method: 'POST',
-        headers: { 'x-user-id': doctorOtherId, 'x-is-supervisor': 'false' },
+        headers: { 'x-test-user-id': doctorOtherId, 'x-test-is-supervisor': 'false' },
         body: JSON.stringify({ reason: 'Not allowed' }),
       });
       expect(res.status).toBe(403);
@@ -104,7 +119,7 @@ describe('Decision permissions & transitions', () => {
     it('allows a supervisor to retract', async () => {
       const res = await apiFetch(`/api/decision/${decisionId}/retract`, {
         method: 'POST',
-        headers: { 'x-user-id': doctorSupervisorId, 'x-is-supervisor': 'true' },
+        headers: { 'x-test-user-id': doctorSupervisorId, 'x-test-is-supervisor': 'true' },
         body: JSON.stringify({ reason: 'Supervisor retract' }),
       });
       expect(res.status).toBe(200);
@@ -115,7 +130,7 @@ describe('Decision permissions & transitions', () => {
       // Trying to retract an already retracted decision
       const res = await apiFetch(`/api/decision/${decisionId}/retract`, {
         method: 'POST',
-        headers: { 'x-user-id': doctorSupervisorId, 'x-is-supervisor': 'true' },
+        headers: { 'x-test-user-id': doctorSupervisorId, 'x-test-is-supervisor': 'true' },
         body: JSON.stringify({ reason: 'Double retract' }),
       });
       expect(res.status).toBe(409);
@@ -139,14 +154,14 @@ describe('Decision permissions & transitions', () => {
       
       await apiFetch(`/api/interpretation/${testInterpId}/confirm`, {
         method: 'POST',
-        headers: { 'x-user-id': doctorAuthorId },
+        headers: { 'x-test-user-id': doctorAuthorId },
       });
     });
 
     it('rejects non-author, non-supervisor → 403', async () => {
       const res = await apiFetch(`/api/interpretation/${testInterpId}/retract`, {
         method: 'POST',
-        headers: { 'x-user-id': doctorOtherId, 'x-is-supervisor': 'false' },
+        headers: { 'x-test-user-id': doctorOtherId, 'x-test-is-supervisor': 'false' },
         body: JSON.stringify({ reason: 'Not allowed' }),
       });
       expect(res.status).toBe(403);
@@ -155,7 +170,7 @@ describe('Decision permissions & transitions', () => {
     it('allows the original author to retract', async () => {
       const res = await apiFetch(`/api/interpretation/${testInterpId}/retract`, {
         method: 'POST',
-        headers: { 'x-user-id': doctorAuthorId, 'x-is-supervisor': 'false' },
+        headers: { 'x-test-user-id': doctorAuthorId, 'x-test-is-supervisor': 'false' },
         body: JSON.stringify({ reason: 'Author retract' }),
       });
       expect(res.status).toBe(200);
@@ -169,7 +184,7 @@ describe('Decision permissions & transitions', () => {
     beforeAll(async () => {
       const dRes = await apiFetch('/api/decision', {
         method: 'POST',
-        headers: { 'x-user-id': doctorAuthorId },
+        headers: { 'x-test-user-id': doctorAuthorId },
         body: JSON.stringify({
           patientId,
           interpretationId: interpId,
@@ -183,7 +198,7 @@ describe('Decision permissions & transitions', () => {
     it('creates new decision with SUPERSEDES link', async () => {
       const res = await apiFetch(`/api/decision/${decisionId}/supersede`, {
         method: 'POST',
-        headers: { 'x-user-id': doctorAuthorId },
+        headers: { 'x-test-user-id': doctorAuthorId },
         body: JSON.stringify({
           interpretationId: interpId,
           newAction: 'New Action',
@@ -200,7 +215,7 @@ describe('Decision permissions & transitions', () => {
       // but if we were to try superseding it again, it should fail with 409
       const doubleRes = await apiFetch(`/api/decision/${decisionId}/supersede`, {
         method: 'POST',
-        headers: { 'x-user-id': doctorAuthorId },
+        headers: { 'x-test-user-id': doctorAuthorId },
         body: JSON.stringify({
           interpretationId: interpId,
           newAction: 'Another Action',

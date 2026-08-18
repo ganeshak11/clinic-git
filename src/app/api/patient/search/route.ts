@@ -1,14 +1,10 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { withSession } from '@/lib/neo4j';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth, AuthError } from '@/lib/auth-guard';
+import { withReadTransaction } from '@/lib/neo4j';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const sessionAuth = await getServerSession(authOptions);
-    if (!sessionAuth) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    await requireAuth(request);
 
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
@@ -17,10 +13,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Missing search query (q parameter)' }, { status: 400 });
     }
 
-    const result = await withSession(async (session) => {
+    const result = await withReadTransaction(async (tx) => {
       // Invariant #5: Parameterized Cypher
       // Search by exact ID or partial name
-      return session.run(
+      return tx.run(
         `
         MATCH (p:Patient)
         WHERE p.id = $query OR toLower(p.name) CONTAINS toLower($query)
@@ -39,6 +35,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json(patients);
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

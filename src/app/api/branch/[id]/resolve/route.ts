@@ -1,75 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withSession } from '@/lib/neo4j';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { canTransitionInterpretation } from '@/lib/transitions';
-import type { InterpretationStatus } from '@/lib/types';
+import { withWriteTransaction, withReadTransaction } from '@/lib/neo4j';
+import { requireAuth, AuthError } from '@/lib/auth-guard';
+import { parseBody, validateString } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
+/**
+ * POST /api/branch/:id/resolve
+ *
+ * Atomic branch resolve — single Cypher query checks branch status,
+ * verifies all interpretation statuses, and applies updates.
+ * Fixes C-1 (atomicity), C-2 (TOCTOU), H-4 (stale-state branch resolution).
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const sessionAuth = await getServerSession(authOptions);
-  if (!sessionAuth && process.env.NODE_ENV !== 'development') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  try {
+    const auth = await requireAuth(request);
+    const { id } = await params;
 
-  const { id } = await params;
-  const body = await request.json().catch(() => ({}));
-  const { confirmedInterpretationId } = body;
+    const body = await parseBody(request);
+    if (!body) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
 
-  if (!confirmedInterpretationId || typeof confirmedInterpretationId !== 'string') {
-    return NextResponse.json({ error: 'confirmedInterpretationId is required' }, { status: 400 });
-  }
+    let confirmedInterpretationId: string;
+    try {
+      confirmedInterpretationId = validateString(body.confirmedInterpretationId, 'confirmedInterpretationId');
+    } catch (e) {
+      return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    }
 
-  const result = await withSession(async (session) => {
-    // 1. Check branch status and existence
-    const branchRes = await session.run(
-      'MATCH (b:Branch {id: $id}) RETURN b.status AS status',
-      { id }
+    // Atomic: check branch status + verify all interps are Hypothesis + confirm one is the target + update all
+    const result = await withWriteTransaction(async (tx) => {
+      const res = await tx.run(
+        `MATCH (b:Branch {id: $id})<-[:BELONGS_TO]-(i:Interpretation)
+         WHERE b.status = 'Open'
+         WITH b, collect(i) AS interps
+         // H-4 fix: ensure all are still Hypothesis at write time, and target exists
+         WHERE ALL(interp IN interps WHERE interp.status = 'Hypothesis')
+           AND ANY(interp IN interps WHERE interp.id = $confirmedId)
+         
+         UNWIND interps AS i
+         SET i.status = CASE WHEN i.id = $confirmedId THEN 'Confirmed' ELSE 'RuledOut' END,
+             i.confirmedBy = CASE WHEN i.id = $confirmedId THEN $userId ELSE NULL END
+             
+         WITH b
+         SET b.status = 'Closed'
+         RETURN b`,
+        { id, confirmedId: confirmedInterpretationId, userId: auth.userId }
+      );
+      return res.records[0]?.get('b').properties ?? null;
+    });
+
+    if (result) {
+      logger.info({ event: 'branch.resolved', actorId: auth.userId, branchId: id, confirmedInterpretationId: confirmedInterpretationId });
+      return NextResponse.json(result);
+    }
+
+    // Distinguish failure reasons
+    const diagnostics = await withReadTransaction(async (tx) => {
+      const res = await tx.run(
+        `MATCH (b:Branch {id: $id})
+         OPTIONAL MATCH (i:Interpretation)-[:BELONGS_TO]->(b)
+         RETURN b.status AS status, collect(i.id) AS interpIds, collect(i.status) AS interpStatuses`,
+        { id }
+      );
+      return res.records[0];
+    });
+
+    if (!diagnostics) {
+      return NextResponse.json({ error: 'Branch not found' }, { status: 404 });
+    }
+
+    const branchStatus = diagnostics.get('status') as string;
+    if (branchStatus === 'Closed') {
+      return NextResponse.json({ error: 'Branch already closed' }, { status: 409 });
+    }
+
+    const interpIds = diagnostics.get('interpIds') as string[];
+    if (!interpIds.includes(confirmedInterpretationId)) {
+      return NextResponse.json({ error: 'confirmedInterpretationId not on this branch' }, { status: 400 });
+    }
+
+    // If we got here, one of the interpretations wasn't in Hypothesis state
+    return NextResponse.json(
+      { error: 'One or more interpretations on this branch are no longer in Hypothesis state' },
+      { status: 409 },
     );
-    if (branchRes.records.length === 0) {
-      return { error: 'Branch not found', status: 404 };
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return NextResponse.json({ error: e.message }, { status: 401 });
     }
-    if (branchRes.records[0].get('status') === 'Closed') {
-      return { error: 'Branch already closed', status: 409 };
-    }
-
-    // 2. Fetch all interpretations on the branch to validate
-    const interpsRes = await session.run(
-      'MATCH (i:Interpretation)-[:BELONGS_TO]->(b:Branch {id: $id}) RETURN i.id AS id, i.status AS status',
-      { id }
-    );
-    const interps = interpsRes.records.map(r => ({ id: r.get('id') as string, status: r.get('status') as InterpretationStatus }));
-    
-    if (!interps.some(i => i.id === confirmedInterpretationId)) {
-      return { error: 'confirmedInterpretationId not on this branch', status: 400 };
-    }
-
-    // Verify all interpretations can transition to Confirmed/RuledOut
-    for (const interp of interps) {
-      const targetStatus = interp.id === confirmedInterpretationId ? 'Confirmed' : 'RuledOut';
-      if (!canTransitionInterpretation(interp.status, targetStatus)) {
-         return { error: `Interpretation ${interp.id} cannot transition from ${interp.status} to ${targetStatus}`, status: 409 };
-      }
-    }
-
-    // 3. Apply the transaction atomically
-    const txRes = await session.run(
-      `MATCH (b:Branch {id: $id})<-[:BELONGS_TO]-(i:Interpretation)
-       SET i.status = CASE WHEN i.id = $confirmedId THEN 'Confirmed' ELSE 'RuledOut' END
-       WITH b
-       SET b.status = 'Closed'
-       RETURN b`,
-      { id, confirmedId: confirmedInterpretationId }
-    );
-
-    return { data: txRes.records[0].get('b').properties };
-  });
-
-  if ('error' in result) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    throw e;
   }
-
-  return NextResponse.json(result.data);
 }

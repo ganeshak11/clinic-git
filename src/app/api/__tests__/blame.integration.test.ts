@@ -3,13 +3,28 @@ import { describe, it, expect, beforeAll } from 'vitest';
 // Helper for API testing
 async function apiFetch(path: string, options: RequestInit = {}) {
   const url = `http://localhost:3000${path}`;
+  
+  let bodyObj = {};
+  try { if (options.body) bodyObj = JSON.parse(options.body as string); } catch (e) {}
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-test-auth-secret': 'test-secret',
+    ...options.headers,
+  };
+  
+  if (bodyObj.authorId && !headers['x-test-user-id']) {
+    headers['x-test-user-id'] = bodyObj.authorId;
+  }
+  
+  // For patient/doctor creation, they don't have authorId. Just give them a dummy user ID if none provided.
+  if (!headers['x-test-user-id']) {
+    headers['x-test-user-id'] = 'test-runner-id';
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-test-bypass': 'true',
-      ...options.headers,
-    },
+    headers,
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, data };
@@ -73,7 +88,7 @@ describe('Blame query integration', () => {
     const bRes = await apiFetch(`/api/interpretation/${interpAId}/supersede`, {
       method: 'POST',
       headers: {
-        'x-user-id': doctorId,
+        'x-test-user-id': doctorId,
       },
       body: JSON.stringify({
         newSummary: 'Interp B',
@@ -89,7 +104,7 @@ describe('Blame query integration', () => {
     // 7. Create Decision on Interp B
     const dBRes = await apiFetch('/api/decision', {
       method: 'POST',
-      headers: { 'x-user-id': doctorId },
+      headers: { 'x-test-user-id': doctorId },
       body: JSON.stringify({
         patientId,
         interpretationId: interpBId,
@@ -111,7 +126,7 @@ describe('Blame query integration', () => {
     
     const dCRes = await apiFetch('/api/decision', {
       method: 'POST',
-      headers: { 'x-user-id': doctorId },
+      headers: { 'x-test-user-id': doctorId },
       body: JSON.stringify({ patientId, interpretationId: interpCId, action: 'Treat C', authorId: doctorId }),
     });
     decisionCId = dCRes.data.id;

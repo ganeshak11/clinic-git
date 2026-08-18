@@ -4,13 +4,28 @@ import { generateId } from '../../../../lib/ids';
 // A helper for curl-like testing in integration
 async function apiFetch(path: string, options: RequestInit = {}) {
   const url = `http://localhost:3000${path}`;
+  
+  let bodyObj = {};
+  try { if (options.body) bodyObj = JSON.parse(options.body as string); } catch (e) {}
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-test-auth-secret': 'test-secret',
+    ...options.headers,
+  };
+  
+  if (bodyObj.authorId && !headers['x-test-user-id']) {
+    headers['x-test-user-id'] = bodyObj.authorId;
+  }
+  
+  // For patient/doctor creation, they don't have authorId. Just give them a dummy user ID if none provided.
+  if (!headers['x-test-user-id']) {
+    headers['x-test-user-id'] = 'test-runner-id';
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-test-bypass': 'true',
-      ...options.headers,
-    },
+    headers,
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, data };
@@ -80,7 +95,7 @@ describe('Interpretation lifecycle integration', () => {
   it('rejects Hypothesis → Superseded (invalid skip)', async () => {
     const res = await apiFetch(`/api/interpretation/${interpretationId}/supersede`, {
       method: 'POST',
-      headers: { 'x-user-id': doctorId },
+      headers: { 'x-test-user-id': doctorId },
       body: JSON.stringify({
         newSummary: 'Skipped Hypo',
         supportingFactIds: [fact1Id],
@@ -93,7 +108,7 @@ describe('Interpretation lifecycle integration', () => {
   it('rejects Hypothesis → Retracted (invalid skip)', async () => {
     const res = await apiFetch(`/api/interpretation/${interpretationId}/retract`, {
       method: 'POST',
-      headers: { 'x-user-id': doctorId },
+      headers: { 'x-test-user-id': doctorId },
       body: JSON.stringify({ reason: 'Skip test' }),
     });
     expect(res.status).toBe(409);
@@ -117,7 +132,7 @@ describe('Interpretation lifecycle integration', () => {
   it('supersedes creates new interpretation with SUPERSEDES link (newer -> older)', async () => {
     const res = await apiFetch(`/api/interpretation/${interpretationId}/supersede`, {
       method: 'POST',
-      headers: { 'x-user-id': doctorId },
+      headers: { 'x-test-user-id': doctorId },
       body: JSON.stringify({
         newSummary: 'Superseded Hypo',
         supportingFactIds: [fact1Id], // New one only uses fact1
@@ -138,7 +153,7 @@ describe('Interpretation lifecycle integration', () => {
     // Retract
     const retRes = await apiFetch(`/api/interpretation/${newId}/retract`, {
       method: 'POST',
-      headers: { 'x-user-id': doctorId },
+      headers: { 'x-test-user-id': doctorId },
       body: JSON.stringify({ reason: 'Mistake' }),
     });
     expect(retRes.status).toBe(200);

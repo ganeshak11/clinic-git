@@ -1,115 +1,116 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withSession } from '@/lib/neo4j';
+import { withWriteTransaction, withReadTransaction } from '@/lib/neo4j';
 import { generateId } from '@/lib/ids';
-import { canTransitionDecision } from '@/lib/transitions';
-import type { DecisionStatus } from '@/lib/types';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth, AuthError } from '@/lib/auth-guard';
+import { parseBody, validateString } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
+/**
+ * POST /api/decision/:id/supersede
+ *
+ * Atomic supersede — reads old status, checks transition, creates new,
+ * and sets old to Superseded ALL in one Cypher statement.
+ * Fixes C-1, C-2, C-3, C-4, C-5, invariant #3.
+ * Cross-patient validation included.
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  let requestingUserId: string;
+  try {
+    const auth = await requireAuth(request);
+    const { id: oldId } = await params;
 
-  const sessionAuth = await getServerSession(authOptions);
-  if (sessionAuth && sessionAuth.user) {
-    requestingUserId = (sessionAuth.user as any).id;
-  } else if (process.env.NODE_ENV === 'development') {
-    requestingUserId = request.headers.get('x-user-id') || '';
-  } else {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    const body = await parseBody(request);
+    if (!body) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
 
-  if (!requestingUserId) {
-    return NextResponse.json({ error: 'User ID is missing' }, { status: 400 });
-  }
+    let newAction: string, reason: string, interpretationId: string;
+    try {
+      newAction = validateString(body.newAction, 'newAction');
+      reason = validateString(body.reason, 'reason');
+      interpretationId = validateString(body.interpretationId, 'interpretationId');
+    } catch (e) {
+      return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    }
 
-  const { id: oldId } = await params;
-  
-  const body = await request.json().catch(() => ({}));
-  const { newAction, interpretationId, reason } = body;
+    const newId = generateId();
+    const createdAt = new Date().toISOString();
 
-  if (!newAction || !interpretationId || !reason) {
+    // Atomic: check old status + cross-patient check + create new + supersede link in single query
+    const result = await withWriteTransaction(async (tx) => {
+      const res = await tx.run(
+        `MATCH (old:Decision {id: $oldId})
+         WHERE old.status = 'Active'
+         
+         // Verify interpretation exists, is Confirmed, and belongs to same patient
+         MATCH (i:Interpretation {id: $interpretationId})
+         WHERE i.status = 'Confirmed' AND i.patientId = old.patientId
+         
+         MATCH (doc:Doctor {id: $authorId})
+         
+         WITH old, i, doc
+         SET old.status = 'Superseded'
+
+         CREATE (new:Decision {
+           id: $newId,
+           patientId: old.patientId,
+           interpretationId: $interpretationId,
+           action: $newAction,
+           status: 'Active',
+           authorId: $authorId,
+           supersedesId: $oldId,
+           createdAt: $createdAt
+         })
+         CREATE (new)-[:BASED_ON]->(i)
+         CREATE (new)-[:AUTHORED_BY]->(doc)
+         CREATE (new)-[:SUPERSEDES]->(old)
+
+         RETURN new`,
+        {
+          oldId,
+          authorId: auth.userId,
+          interpretationId,
+          newId,
+          newAction,
+          createdAt,
+        },
+      );
+      return res.records[0]?.get('new').properties ?? null;
+    });
+
+    if (result) {
+      logger.info({ event: 'decision.superseded', actorId: auth.userId, decisionId: oldId, newDecisionId: result.id, fromStatus: 'Active', toStatus: 'Superseded' });
+      return NextResponse.json(result, { status: 201 });
+    }
+
+    // Distinguish failure reasons
+    const existing = await withReadTransaction(async (tx) => {
+      const res = await tx.run(
+        'MATCH (d:Decision {id: $oldId}) RETURN d.status AS status',
+        { oldId },
+      );
+      return res.records[0]?.get('status') as string | undefined;
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Old decision not found' }, { status: 404 });
+    }
+    if (existing !== 'Active') {
+      return NextResponse.json(
+        { error: `Cannot transition from ${existing} to Superseded` },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
-      { error: 'newAction, interpretationId, and reason are required' },
+      { error: 'Failed to supersede. Doctor or interpretation may not exist, not be Confirmed, or patient mismatch.' },
       { status: 400 },
     );
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return NextResponse.json({ error: e.message }, { status: 401 });
+    }
+    throw e;
   }
-
-  const newId = generateId();
-  const createdAt = new Date().toISOString();
-
-  const result = await withSession(async (session) => {
-    // 1. Fetch old status
-    const existing = await session.run(
-      'MATCH (d:Decision {id: $oldId}) RETURN d.status AS status, d.patientId AS patientId',
-      { oldId },
-    );
-
-    const record = existing.records[0];
-    if (!record) {
-      return { error: 'Old decision not found', status: 404 };
-    }
-
-    const currentStatus = record.get('status') as DecisionStatus;
-    const patientId = record.get('patientId');
-
-    // 2. Check transition
-    if (!canTransitionDecision(currentStatus, 'Superseded')) {
-      return {
-        error: `Cannot transition from ${currentStatus} to Superseded`,
-        status: 409,
-      };
-    }
-
-    // 3. Atomically supersede (Invariant #3: newer -> older)
-    // Also verify that interpretation exists and is Confirmed
-    const txRes = await session.run(
-      `MATCH (old:Decision {id: $oldId})
-       MATCH (i:Interpretation {id: $interpretationId})
-       WHERE i.status = 'Confirmed'
-       MATCH (doc:Doctor {id: $authorId})
-       WITH old, doc, i
-       
-       SET old.status = 'Superseded'
-       
-       CREATE (new:Decision {
-         id: $newId,
-         patientId: $patientId,
-         interpretationId: $interpretationId,
-         action: $newAction,
-         status: 'Active',
-         authorId: $authorId,
-         supersedesId: $oldId,
-         createdAt: $createdAt
-       })
-       CREATE (new)-[:AUTHORED_BY]->(doc)
-       CREATE (new)-[:SUPERSEDES]->(old)
-       CREATE (new)-[:BASED_ON]->(i)
-       
-       RETURN new`,
-      {
-        oldId,
-        authorId: requestingUserId,
-        newId,
-        patientId,
-        interpretationId,
-        newAction,
-        createdAt
-      },
-    );
-
-    if (txRes.records.length === 0) {
-      return { error: 'Failed to supersede. Interpretation may not be Confirmed, or Doctor missing.', status: 400 };
-    }
-
-    return { data: txRes.records[0].get('new').properties };
-  });
-
-  if ('error' in result) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
-  }
-
-  return NextResponse.json(result.data, { status: 201 });
 }
