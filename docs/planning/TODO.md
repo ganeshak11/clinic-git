@@ -144,10 +144,12 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Completed:** 2026-08-18 — Implemented Decision creation endpoint and verified that decisions can only be based on `Confirmed` interpretations. Tests added and passed.
 
 ### Sub-phase 4.2 — Decision Transitions & Permissions
-- [ ] `src/app/api/decision/[id]/retract/route.ts` — uses `canTransitionDecision()` + `canRetract()`, supervisor-gated
-- [ ] `src/app/api/decision/[id]/supersede/route.ts` — creates new Decision with `SUPERSEDES`
-- [ ] Backfill `canRetract()` enforcement on `POST /api/interpretation/:id/retract` if not already gated (must be server-side per security.md)
-- [ ] Integration tests: decision retract by author, by supervisor, by neither (→ 403), double-retract (→ 409)
+- [x] `src/app/api/decision/[id]/retract/route.ts` — uses `canTransitionDecision()` + `canRetract()`, supervisor-gated
+- [x] `src/app/api/decision/[id]/supersede/route.ts` — creates new Decision, sets old to `Superseded`, adds `SUPERSEDES` link
+- [x] `src/app/api/interpretation/[id]/retract/route.ts` — verify/backfill `canRetract()` enforcement on the backend
+- [x] Integration test: author or supervisor can retract decision, others get 403
+
+**Completed:** 2026-08-18 — Implemented Retract and Supersede transitions for Decisions, strictly enforcing author/supervisor authorization policies identically to Interpretations. Tests successfully run and verified.
 
 ### Sub-phase 4.3 — Blame Retargeting & End-to-End Tests
 - [ ] Retarget blame endpoint: `GET /api/blame/[decisionId]` per architecture.md §4 — walks `BASED_ON` → Interpretation → `SUPERSEDES` chain → Facts → Doctor

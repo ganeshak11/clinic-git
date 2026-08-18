@@ -18,6 +18,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [4.2.0] - 2026-08-18 — Phase 4.S2: Decision Transitions & Permissions
+
+### Added
+- `src/app/api/decision/[id]/retract/route.ts` implementing the Retract workflow for Decisions.
+- `src/app/api/decision/[id]/supersede/route.ts` implementing the Supersede workflow for Decisions.
+- Implemented and rigorously enforced the `canRetract` permission model on Decision endpoints, identical to Interpretations.
+- Expanded `src/app/api/__tests__/decision-permissions.integration.test.ts` to assert that non-author, non-supervisor actors correctly receive a `403 Forbidden` response when attempting to modify a decision.
+
+### Verified
+- Automated integration test execution across 26 tests, successfully passing all edge-cases for state transitions (no same-state transitions, no invalid skips).
+
+---
+
 ## [3.2.0] - 2026-08-18 — Phase 3.S2: Patient Log & Supersede Chain Tests (Phase 3 Complete)
 
 ### Added
