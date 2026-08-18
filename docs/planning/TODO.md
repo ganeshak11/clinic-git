@@ -94,15 +94,17 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Tools:** Same stack, extending Phase 1 API routes. No new dependencies.
 
 ### Sub-phase 2.1 — Branch Creation & Interpretation Linking
-- [ ] Add `Branch` type to `src/lib/types.ts` with `BranchStatus = 'Open' | 'Closed'`
-- [ ] Add unique ID constraint for Branch to `src/lib/schema.ts`
-- [ ] `src/app/api/branch/route.ts` — `POST /api/branch` per api-spec.md
-- [ ] Modify `POST /api/interpretation` to accept optional `branchId`, linking `(Interpretation)-[:BELONGS_TO]->(Branch)`
-- [ ] Integration test: create branch, attach multiple interpretations, verify relationships
+- [x] `src/lib/types.ts` — `Branch` interface, `CreateBranchInput`
+- [x] `src/lib/schema.ts` — `CREATE CONSTRAINT branch_id_unique`
+- [x] `src/app/api/branch/route.ts` — `POST /api/branch` (create Branch, link to Patient)
+- [x] `src/app/api/interpretation/route.ts` — Modify POST to accept `branchId`, validate it exists and is `Open`, link `(Interpretation)-[:BELONGS_TO]->(Branch)`
+- [x] Integration test: create branch, attach multiple interpretations, verify relationships
+
+**Completed:** 2026-08-18 — Implemented Branch creation endpoint and modified Interpretation endpoint to validate and safely link to a Branch atomically. Verified via integration tests.
 
 ### Sub-phase 2.2 — Branch Resolve & Read
-- [ ] `src/app/api/branch/[id]/resolve/route.ts` — `POST /api/branch/:id/resolve` per architecture.md §5: confirmed → `Confirmed`, rest → `RuledOut`, branch → `Closed`
-- [ ] `src/app/api/branch/[id]/route.ts` — `GET /api/branch/:id` per api-spec.md: branch + interpretations
+- [ ] `src/app/api/branch/[id]/resolve/route.ts` — `POST /api/branch/[id]/resolve` per architecture.md §5: confirmed → `Confirmed`, rest → `RuledOut`, branch → `Closed`
+- [ ] `src/app/api/branch/[id]/route.ts` — `GET /api/branch/[id]` per api-spec.md: branch + interpretations
 - [ ] Validate: `confirmedInterpretationId` not on branch → 400; branch already closed → 409
 - [ ] Integration tests: resolve branch, verify ruled-out still queryable, double-resolve returns 409
 

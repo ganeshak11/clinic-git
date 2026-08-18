@@ -18,6 +18,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [2.1.0] - 2026-08-18 — Phase 2.S1: Branch Creation & Interpretation Linking
+
+### Added
+- `src/app/api/branch/route.ts` to allow creating Branch nodes tied to a specific patient.
+- Modified `src/app/api/interpretation/route.ts` to support an optional `branchId`. 
+  - Validates branch existence, patient ID match, and branch status (`Open`).
+  - Atomically creates `(Interpretation)-[:BELONGS_TO]->(Branch)` relationship.
+
+### Verified
+- Executed `curl` integration tests to successfully create a Branch.
+- Verified that an Interpretation can successfully be created and linked to the Branch via `branchId` (returns 201).
+
+---
+
 ## [1.4.0] - 2026-08-17 — Phase 1.S4: Status Transitions & Patient Read (Phase 1 Complete)
 
 ### Added

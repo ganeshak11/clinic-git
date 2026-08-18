@@ -33,6 +33,25 @@ export async function POST(request: NextRequest) {
   const id = generateId();
   const createdAt = new Date().toISOString();
 
+  if (branchId) {
+    const branchRes = await withSession(async (session) => {
+      return session.run(
+        'MATCH (b:Branch {id: $branchId}) RETURN b.status AS status, b.patientId AS patientId',
+        { branchId }
+      );
+    });
+    const bRecord = branchRes.records[0];
+    if (!bRecord) {
+      return NextResponse.json({ error: 'Branch not found' }, { status: 404 });
+    }
+    if (bRecord.get('status') === 'Closed') {
+      return NextResponse.json({ error: 'Branch is closed' }, { status: 409 });
+    }
+    if (bRecord.get('patientId') !== patientId) {
+      return NextResponse.json({ error: 'Branch does not belong to this patient' }, { status: 400 });
+    }
+  }
+
   const result = await withSession(async (session) => {
     // Verify patient, doctor, and all facts exist in a single query
     // All values parameterized (invariant #5)
@@ -44,6 +63,10 @@ export async function POST(request: NextRequest) {
        MATCH (f:Fact {id: factId})
        WITH p, doc, collect(f) AS facts
        WHERE size(facts) = size($factIds)
+
+       OPTIONAL MATCH (b:Branch {id: $branchId})
+       WHERE $branchId IS NOT NULL
+
        CREATE (i:Interpretation {
          id: $id,
          patientId: $patientId,
@@ -52,7 +75,17 @@ export async function POST(request: NextRequest) {
          authorId: $authorId,
          createdAt: $createdAt
        })
+
+       FOREACH (_ IN CASE WHEN $branchId IS NOT NULL THEN [1] ELSE [] END |
+         SET i.branchId = $branchId
+       )
+
        CREATE (i)-[:AUTHORED_BY]->(doc)
+
+       FOREACH (_ IN CASE WHEN b IS NOT NULL THEN [1] ELSE [] END |
+         CREATE (i)-[:BELONGS_TO]->(b)
+       )
+
        WITH i, facts
        UNWIND facts AS f
        CREATE (f)-[:SUPPORTS]->(i)
@@ -61,6 +94,7 @@ export async function POST(request: NextRequest) {
         patientId,
         authorId,
         factIds: supportingFactIds,
+        branchId: branchId || null,
         id,
         summary,
         createdAt,
