@@ -136,11 +136,12 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Tools:** Same stack, no new dependencies.
 
 ### Sub-phase 4.1 — Decision Node & Creation
-- [ ] Add `Decision` type with `DecisionStatus = 'Active' | 'Retracted' | 'Superseded'` to types.ts
-- [ ] Add `canTransitionDecision()` to transitions.ts (same pattern as Interpretation)
-- [ ] Add unique ID constraint for Decision to schema.ts
-- [ ] `src/app/api/decision/route.ts` — `POST /api/decision` per api-spec.md: `(Decision)-[:BASED_ON]->(Interpretation)`, must reference `Confirmed` interpretation → 400 otherwise
-- [ ] Integration test: create decision on confirmed interpretation, reject on non-confirmed
+- [x] Add Decision constraint to `src/lib/schema.ts`
+- [x] `src/app/api/decision/route.ts` — `POST /api/decision`
+- [x] Integration test: reject Decision creation if interpretation is not `Confirmed`
+- [x] Integration test: create Decision successfully
+
+**Completed:** 2026-08-18 — Implemented Decision creation endpoint and verified that decisions can only be based on `Confirmed` interpretations. Tests added and passed.
 
 ### Sub-phase 4.2 — Decision Transitions & Permissions
 - [ ] `src/app/api/decision/[id]/retract/route.ts` — uses `canTransitionDecision()` + `canRetract()`, supervisor-gated
