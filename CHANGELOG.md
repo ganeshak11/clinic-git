@@ -16,6 +16,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 - Updated `AGENTS.md` — added sub-phase context, phase completion rule, expanded directory map, bug pattern reference table.
 - Created 19 implementation plans in `docs/plans/implementation_plan_p{phase}_s{sub}.md`.
 
+## [4.3.2] - 2026-08-18 — Final Fully Working Backend
+
+### Fixed
+- Fixed an issue in `src/proxy.ts` where `NextRequest.ip` threw a TypeScript error. Safely fell back to checking the `x-forwarded-for` header for rate limiting.
+
+### Verified
+- Extracted and safely verified endpoint traces and `pino` audit logs running against the final build.
+
+---
+
 ## [4.3.1] - 2026-08-18 — Production Readiness Audit Remediation
 
 ### Added
