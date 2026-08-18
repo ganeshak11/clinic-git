@@ -22,6 +22,7 @@ describe('Blame against superseded chains', () => {
   let interpAId: string;
   let interpBId: string;
   let interpCId: string;
+  let decisionCId: string;
 
   beforeAll(async () => {
     // 1. Patient
@@ -83,12 +84,24 @@ describe('Blame against superseded chains', () => {
       body: JSON.stringify({ newSummary: 'C', supportingFactIds: [factId], reason: 'reason2' }),
     });
     interpCId = cRes.data.id;
+
+    // Confirm C
+    await apiFetch(`/api/interpretation/${interpCId}/confirm`, { method: 'POST' });
+
+    // 7. Create Decision on C
+    const decRes = await apiFetch('/api/decision', {
+      method: 'POST',
+      headers: { 'x-user-id': doctorId },
+      body: JSON.stringify({ patientId, interpretationId: interpCId, action: 'Treat Chain', authorId: doctorId }),
+    });
+    decisionCId = decRes.data.id;
   });
 
   it('returns both A and B when A was superseded by B and B by C', async () => {
-    const res = await apiFetch(`/api/blame/${interpCId}`);
+    const res = await apiFetch(`/api/blame/${decisionCId}`);
     expect(res.status).toBe(200);
     expect(res.data.interpretation.id).toBe(interpCId);
+    expect(res.data.decision.id).toBe(decisionCId);
     
     // We expect B and A in the priorChain.
     const chain = res.data.priorChain;
@@ -101,6 +114,7 @@ describe('Blame against superseded chains', () => {
     expect(chainIds).toContain(interpAId);
   });
 });
+
 
 describe('Patient log', () => {
   let patientId: string;

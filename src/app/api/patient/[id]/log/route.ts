@@ -32,7 +32,14 @@ export async function GET(
          nodeId: i.id,
          summary: i.summary + ' [' + i.status + ']'
        }) AS interpEntries
-       RETURN factEntries + interpEntries AS entries`,
+       OPTIONAL MATCH (dec:Decision {patientId: $id})
+       WITH p, factEntries, interpEntries, collect(DISTINCT {
+         type: 'decision',
+         timestamp: dec.createdAt,
+         nodeId: dec.id,
+         summary: dec.action + ' [' + dec.status + ']'
+       }) AS decisionEntries
+       RETURN factEntries + interpEntries + decisionEntries AS entries`,
       { id },
     );
   });

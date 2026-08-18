@@ -5,37 +5,38 @@ import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ interpretationId: string }> },
+  { params }: { params: Promise<{ decisionId: string }> },
 ) {
   const sessionAuth = await getServerSession(authOptions);
   if (!sessionAuth && process.env.NODE_ENV !== 'development') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { interpretationId } = await params;
+  const { decisionId } = await params;
 
   const result = await withSession(async (session) => {
     return session.run(
-      `MATCH (i:Interpretation {id: $id})
+      `MATCH (d:Decision {id: $id})-[:BASED_ON]->(i:Interpretation)
        OPTIONAL MATCH (i)-[:SUPERSEDES*0..5]->(prior:Interpretation)
        MATCH (f:Fact)-[:SUPPORTS]->(i)
        MATCH (i)-[:AUTHORED_BY]->(doc:Doctor)
-       RETURN i,
+       RETURN d, i,
               collect(DISTINCT prior) AS priorChain,
               collect(DISTINCT f) AS facts,
               doc`,
-      { id: interpretationId },
+      { id: decisionId },
     );
   });
 
   const record = result.records[0];
   if (!record) {
     return NextResponse.json(
-      { error: 'Interpretation not found' },
+      { error: 'Decision not found or missing relations' },
       { status: 404 },
     );
   }
 
+  const decision = record.get('d').properties;
   const interpretation = record.get('i').properties;
   
   // Extract prior chain and exclude the current interpretation (from 0-length match)
@@ -49,6 +50,7 @@ export async function GET(
   const authoredBy = record.get('doc').properties;
 
   return NextResponse.json({
+    decision,
     interpretation,
     priorChain,
     supportingFacts,

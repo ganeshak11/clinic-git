@@ -21,6 +21,9 @@ describe('Blame query integration', () => {
   let factId: string;
   let interpAId: string;
   let interpBId: string;
+  let decisionBId: string;
+  let interpCId: string;
+  let decisionCId: string;
 
   beforeAll(async () => {
     // 1. Create Patient
@@ -79,16 +82,53 @@ describe('Blame query integration', () => {
       }),
     });
     interpBId = bRes.data.id;
+
+    // Confirm B
+    await apiFetch(`/api/interpretation/${interpBId}/confirm`, { method: 'POST' });
+
+    // 7. Create Decision on Interp B
+    const dBRes = await apiFetch('/api/decision', {
+      method: 'POST',
+      headers: { 'x-user-id': doctorId },
+      body: JSON.stringify({
+        patientId,
+        interpretationId: interpBId,
+        action: 'Treat B',
+        authorId: doctorId,
+      }),
+    });
+    decisionBId = dBRes.data.id;
+
+    // 8. Create Decision on Interp A (Wait, A is Superseded. Can we create a decision on it? No, must be Confirmed. Let's just create a decision on A before superseding, or create a separate interpretation C for the second test). Let's use a new confirmed interpretation for the second test, or just skip it because we test everything on B.
+    
+    // Create Interp C
+    const cRes = await apiFetch('/api/interpretation', {
+      method: 'POST',
+      body: JSON.stringify({ patientId, summary: 'Interp C', supportingFactIds: [factId], authorId: doctorId }),
+    });
+    interpCId = cRes.data.id;
+    await apiFetch(`/api/interpretation/${interpCId}/confirm`, { method: 'POST' });
+    
+    const dCRes = await apiFetch('/api/decision', {
+      method: 'POST',
+      headers: { 'x-user-id': doctorId },
+      body: JSON.stringify({ patientId, interpretationId: interpCId, action: 'Treat C', authorId: doctorId }),
+    });
+    decisionCId = dCRes.data.id;
   });
 
-  it('blame query on B should return B and priorChain A', async () => {
-    const res = await apiFetch(`/api/blame/${interpBId}`);
+  it('blame query on decision B should return B and priorChain A', async () => {
+    const res = await apiFetch(`/api/blame/${decisionBId}`);
     expect(res.status).toBe(200);
     
     // Check main interpretation
     expect(res.data.interpretation.id).toBe(interpBId);
     expect(res.data.interpretation.summary).toBe('Interp B');
     
+    // Check decision
+    expect(res.data.decision.id).toBe(decisionBId);
+    expect(res.data.decision.action).toBe('Treat B');
+
     // Check prior chain (should contain A)
     expect(res.data.priorChain.length).toBe(1);
     expect(res.data.priorChain[0].id).toBe(interpAId);
@@ -102,10 +142,12 @@ describe('Blame query integration', () => {
     expect(res.data.authoredBy.id).toBe(doctorId);
   });
 
-  it('blame query on A should return A and empty priorChain', async () => {
-    const res = await apiFetch(`/api/blame/${interpAId}`);
+  it('blame query on decision C should return C and empty priorChain', async () => {
+    const res = await apiFetch(`/api/blame/${decisionCId}`);
     expect(res.status).toBe(200);
-    expect(res.data.interpretation.id).toBe(interpAId);
+    expect(res.data.interpretation.id).toBe(interpCId);
+    expect(res.data.decision.id).toBe(decisionCId);
     expect(res.data.priorChain.length).toBe(0);
   });
 });
+

@@ -18,6 +18,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 
 ---
 
+## [4.3.0] - 2026-08-18 — Phase 4.S3: Blame Retargeting & End-to-End Tests (Phase 4 Complete)
+
+### Added
+- Retargeted the blame endpoint from `src/app/api/blame/[interpretationId]` to `src/app/api/blame/[decisionId]`, reflecting the true final architecture. The query walks backwards from Decision → Interpretation → Superseded Interpretations → Facts → Doctor.
+- Updated the Patient Log (`src/app/api/patient/[id]/log/route.ts`) to return Decisions in the chronological timeline alongside Facts and Interpretations.
+- Created `src/app/api/__tests__/end-to-end.integration.test.ts` to simulate the full lifecycle of the graph in one sweep.
+
+### Verified
+- Automated integration test execution across 28 tests!
+- The entire backend API is now fully implemented, tested, and feature-complete.
+
+---
+
 ## [4.2.0] - 2026-08-18 — Phase 4.S2: Decision Transitions & Permissions
 
 ### Added

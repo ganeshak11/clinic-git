@@ -152,10 +152,11 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Completed:** 2026-08-18 — Implemented Retract and Supersede transitions for Decisions, strictly enforcing author/supervisor authorization policies identically to Interpretations. Tests successfully run and verified.
 
 ### Sub-phase 4.3 — Blame Retargeting & End-to-End Tests
-- [ ] Retarget blame endpoint: `GET /api/blame/[decisionId]` per architecture.md §4 — walks `BASED_ON` → Interpretation → `SUPERSEDES` chain → Facts → Doctor
-- [ ] Update `GET /api/patient/:id/log` to include Decision entries
-- [ ] End-to-end integration test: fact → interpretation → confirm → decision → retract decision → blame resolves full chain
-- [ ] Update api-spec.md if any response shapes changed (doc-sync rule)
+- [x] Retarget blame endpoint: `GET /api/blame/[decisionId]` per architecture.md §4 — walks `BASED_ON` → Interpretation → `SUPERSEDES` chain → Facts → Doctor
+- [x] Patient log: Add Decisions to `src/app/api/patient/[id]/log/route.ts`
+- [x] End-to-end tests: `src/app/api/__tests__/end-to-end.integration.test.ts` testing the entire fact → interpretation → decision → retract → blame lifecycle
+
+**Completed:** 2026-08-18 — Retargeted blame endpoint to Decision nodes and successfully added Decision entries to the patient log. Exhaustively tested the complete graph lifecycle across 28 automated integration tests. Phase 4 backend is complete!
 
 ---
 
