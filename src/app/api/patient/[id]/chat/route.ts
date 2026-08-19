@@ -28,17 +28,17 @@ export async function POST(
 
     // 1. Fetch patient's clinical graph from Neo4j
     const factsResult = await withReadTransaction((tx) =>
-      tx.run(`MATCH (p:Patient {id: $patientId})<-[:RELATES_TO]-(f:Fact) RETURN properties(f) AS fact`, { patientId })
+      tx.run(`MATCH (p:Patient {id: $patientId})-[:HAS_FACT]->(f:Fact) RETURN properties(f) AS fact`, { patientId })
     );
     const facts = factsResult.records.map(r => r.get('fact'));
 
     const interpretationsResult = await withReadTransaction((tx) =>
-      tx.run(`MATCH (p:Patient {id: $patientId})<-[:RELATES_TO]-()-[:INTERPRETED_AS]->(i:Interpretation) RETURN properties(i) AS interpretation`, { patientId })
+      tx.run(`MATCH (p:Patient {id: $patientId})-[:HAS_INTERPRETATION]->(i:Interpretation) RETURN properties(i) AS interpretation`, { patientId })
     );
     const interpretations = interpretationsResult.records.map(r => r.get('interpretation'));
 
     const decisionsResult = await withReadTransaction((tx) =>
-      tx.run(`MATCH (p:Patient {id: $patientId})<-[:RELATES_TO]-()-[:LED_TO]->(d:Decision) RETURN properties(d) AS decision`, { patientId })
+      tx.run(`MATCH (p:Patient {id: $patientId})-[:HAS_DECISION]->(d:Decision) RETURN properties(d) AS decision`, { patientId })
     );
     const decisions = decisionsResult.records.map(r => r.get('decision'));
 
