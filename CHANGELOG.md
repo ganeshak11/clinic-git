@@ -16,6 +16,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Every entry is t
 - Updated `AGENTS.md` — added sub-phase context, phase completion rule, expanded directory map, bug pattern reference table.
 - Created 19 implementation plans in `docs/plans/implementation_plan_p{phase}_s{sub}.md`.
 
+## [5.0.0] - 2026-08-18 — Phase 5: Interactive Graph UI (Phase 5 Complete)
+
+### Added
+- Created `/login` page with high-fidelity clinical aesthetics.
+- Re-architected the frontend into a single-page interactive graph experience instead of separated list/log/branch views.
+- Created the Home Dashboard (`/`) with an animated mock graph and a `framer-motion` transforming patient search bar.
+- Implemented `reactflow` graph canvas at `/patients/[id]` for navigating medical history.
+- Created `CommitNode`, `CommitPanel`, and a unified `CreateCommitDialog` integrating Cloudinary uploads for reports.
+
+### Verified
+- UI built with "impeccable" visual styling using glassmorphism, responsive animations, and strict exact-match ID searches for privacy.
+- Exit criterion: PASS — UI successfully models the clinical-git workflow requested by the user.
+
+---
+
 ## [4.3.2] - 2026-08-18 — Final Fully Working Backend
 
 ### Fixed
@@ -250,3 +265,9 @@ Template for sub-phase completion entries:
 - Anything the next agent session should know
 
 -->
+
+### Phase 6: Demo Prep
+#### Sub-phase 1: Seed Script
+- **Changed:** Created `scripts/seed.ts` and `scripts/clear.ts` to clear and seed realistic clinical mock data into the database.
+- **Changed:** Added `npm run seed` and `npm run db:clear` scripts to `package.json`.
+- **Verified:** Script runs without error, clearing the graph and populating nodes including branches, supersedes, and decisions with clinical terminology.

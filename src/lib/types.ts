@@ -21,6 +21,10 @@ export type FactType = 'lab' | 'imaging' | 'vital' | 'observation';
 export interface Patient {
   id: string;
   name: string;
+  age?: number;
+  gender?: string;
+  weight?: string;
+  height?: string;
   createdAt: string; // ISO 8601
 }
 
@@ -120,6 +124,11 @@ export interface LogEntry {
   timestamp: string;
   nodeId: string;
   summary: string;
+  author?: string;
+  branchId?: string;
+  supersedesId?: string;
+  interpretationId?: string;
+  evidence?: Array<{ id: string, value: string, url?: string }>;
 }
 
 export interface BlameResult {

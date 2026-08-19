@@ -23,21 +23,38 @@ export async function GET(
            nodeId: f.id,
            summary: f.type + ': ' + f.value
          }) AS factEntries
-         OPTIONAL MATCH (i:Interpretation {patientId: $id})
+         OPTIONAL MATCH (b:Branch {patientId: $id})
          WITH p, factEntries, collect(DISTINCT {
+           type: 'branch',
+           timestamp: b.createdAt,
+           nodeId: b.id,
+           summary: b.question + ' [' + b.status + ']'
+         }) AS branchEntries
+         OPTIONAL MATCH (i:Interpretation {patientId: $id})
+         OPTIONAL MATCH (i)-[:AUTHORED_BY]->(dI:Doctor)
+         OPTIONAL MATCH (f:Fact)-[:SUPPORTS]->(i)
+         WITH p, factEntries, branchEntries, i, dI, collect(CASE WHEN f IS NOT NULL THEN { id: f.id, value: f.value, url: f.attachmentUrl } END) AS evidence
+         WITH p, factEntries, branchEntries, collect(DISTINCT {
            type: 'interpretation',
            timestamp: i.createdAt,
            nodeId: i.id,
-           summary: i.summary + ' [' + i.status + ']'
+           summary: i.summary + ' [' + i.status + ']',
+           author: dI.name,
+           branchId: i.branchId,
+           supersedesId: i.supersedesId,
+           evidence: evidence
          }) AS interpEntries
          OPTIONAL MATCH (dec:Decision {patientId: $id})
-         WITH p, factEntries, interpEntries, collect(DISTINCT {
+         OPTIONAL MATCH (dec)-[:AUTHORED_BY]->(dD:Doctor)
+         WITH p, factEntries, branchEntries, interpEntries, collect(DISTINCT {
            type: 'decision',
            timestamp: dec.createdAt,
            nodeId: dec.id,
-           summary: dec.action + ' [' + dec.status + ']'
+           summary: dec.action + ' [' + dec.status + ']',
+           author: dD.name,
+           interpretationId: dec.interpretationId
          }) AS decisionEntries
-         RETURN factEntries + interpEntries + decisionEntries AS entries`,
+         RETURN factEntries + branchEntries + interpEntries + decisionEntries AS entries`,
         { id },
       );
     });

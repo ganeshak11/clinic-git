@@ -198,8 +198,16 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Tools:** A seed script (`scripts/seed.ts`), no new dependencies.
 
 ### Sub-phase 6.1 — Seed Script
-- [ ] `scripts/seed.ts` — realistic patient case: resolved branch (2-3 ruled-out + 1 confirmed), decision, superseded interpretation in chain
-- [ ] `npm run seed` script in package.json
+- [x] Implement `scripts/seed.ts`
+- [x] Clear database safely
+- [x] Insert mock doctors
+- [x] Insert mock patient
+- [x] Create a linear chain (Fact → Interpretation → Decision)
+- [x] Create a branched chain (Competing Interpretations)
+- [x] Resolve the branch
+- [x] Verify script runs without error and data appears in UI
+
+**Completed:** 2026-08-19 — Implemented scripts/seed.ts and scripts/clear.ts to fully populate a realistic medical case (Maria Santos) exercising branches, supersedes, and decisions. Script was executed and verified.
 - [ ] Data must look clinical, not test-like ("HbA1c 8.4%", not "test-fact-1")
 
 ### Sub-phase 6.2 — Rehearsal & Q&A Prep

@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { generateId } from '../../../../lib/ids';
+import { generateId } from '@/lib/ids';
 
 // A helper for curl-like testing in integration
 async function apiFetch(path: string, options: RequestInit = {}) {
   const url = `http://localhost:3000${path}`;
   
-  let bodyObj = {};
+  let bodyObj: any = {};
   try { if (options.body) bodyObj = JSON.parse(options.body as string); } catch (e) {}
   
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-test-auth-secret': 'test-secret',
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   };
   
   if (bodyObj.authorId && !headers['x-test-user-id']) {

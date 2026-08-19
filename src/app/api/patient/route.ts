@@ -19,9 +19,15 @@ export async function POST(request: NextRequest) {
     }
 
     let name: string, dateOfBirth: string | null;
+    let age: number | null, gender: string | null, weight: string | null, height: string | null;
     try {
       name = validateString(body.name, 'name');
       dateOfBirth = validateOptionalString(body.dateOfBirth, 'dateOfBirth');
+      age = body.age !== undefined && body.age !== "" ? Number(body.age) : null;
+      if (age !== null && isNaN(age)) throw new Error("Invalid age format");
+      gender = validateOptionalString(body.gender, 'gender');
+      weight = validateOptionalString(body.weight, 'weight');
+      height = validateOptionalString(body.height, 'height');
     } catch (e) {
       return NextResponse.json({ error: (e as Error).message }, { status: 400 });
     }
@@ -31,9 +37,18 @@ export async function POST(request: NextRequest) {
 
     const result = await withWriteTransaction(async (tx) => {
       const res = await tx.run(
-        `CREATE (p:Patient {id: $id, name: $name, dateOfBirth: $dateOfBirth, createdAt: $createdAt})
+        `CREATE (p:Patient {
+           id: $id, 
+           name: $name, 
+           dateOfBirth: $dateOfBirth,
+           age: $age,
+           gender: $gender,
+           weight: $weight,
+           height: $height,
+           createdAt: $createdAt
+         })
          RETURN p`,
-        { id, name, dateOfBirth: dateOfBirth ?? null, createdAt },
+        { id, name, dateOfBirth: dateOfBirth ?? null, age, gender, weight, height, createdAt },
       );
       return res.records[0]?.get('p').properties ?? null;
     });

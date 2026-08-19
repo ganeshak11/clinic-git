@@ -35,5 +35,9 @@ export default function middleware(req: NextRequest, event: any) {
 
 export const config = {
   // Protect all /api/ routes except /api/auth and /api/health
-  matcher: ['/api/((?!auth|health).*)'],
+  // AND protect frontend routes except /login and static files
+  matcher: [
+    '/api/((?!auth|health).*)',
+    '/((?!api|_next|login|favicon.ico).*)',
+  ],
 };
