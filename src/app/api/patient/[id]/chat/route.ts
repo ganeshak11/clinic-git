@@ -16,13 +16,11 @@ export async function POST(
   });
   try {
     const { id: patientId } = await params;
-    require('fs').appendFileSync('chat-logs.txt', "Received chat request for patient: " + patientId + "\\n");
 
     await requireAuth(request);
 
     const body = await request.json();
     const { messages } = body;
-    require('fs').appendFileSync('chat-logs.txt', "Parsed messages: " + JSON.stringify(messages) + "\\n");
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Invalid messages array' }, { status: 400 });
@@ -59,8 +57,6 @@ ${JSON.stringify(decisions, null, 2)}
 
 Please answer the user's questions based strictly on this clinical data. Be concise, professional, and analytical.
 `;
-
-    require('fs').appendFileSync('chat-logs.txt', "Calling groq...\\n");
 
     // 2. Call Groq with standard AI SDK
     const result = await streamText({
