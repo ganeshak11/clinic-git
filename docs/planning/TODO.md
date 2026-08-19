@@ -173,49 +173,24 @@ Also add a corresponding entry to `CHANGELOG.md` — see the Phase completion ru
 **Completed:** 2026-08-18 — Built out the rich aesthetic app shell with shadcn/ui and implemented consistent status badge rendering, verifying Retracted and Superseded remain distinct.
 
 ### Sub-phase 5.2 — Patient View
-- [ ] Patient list page
-- [ ] Patient detail page: facts list + interpretations list
-- [ ] Add-fact dialog form (shadcn Dialog + Form) calling `POST /api/fact`
-- [ ] Add-interpretation dialog form calling `POST /api/interpretation` with fact-picker for `supportingFactIds`
-- [ ] Refresh data after mutations
+- [x] Patient list page
+- [x] Patient detail page: facts list + interpretations list
+- [x] Add-fact dialog form (shadcn Dialog + Form) calling `POST /api/fact`
+- [x] Add-interpretation dialog form calling `POST /api/interpretation` with fact-picker for `supportingFactIds`
+- [x] Refresh data after mutations
 
 ### Sub-phase 5.3 — Branch View
-- [ ] Install React Flow
-- [ ] Branch graph: interpretations as nodes on a branch, visual state per status
-- [ ] "Resolve" action: select interpretation to confirm, call `/api/branch/:id/resolve`
-- [ ] Visual update: confirmed = highlighted, ruled-out = greyed but visible — never removed
-- [ ] Add-interpretation-to-branch flow
+- [x] Install React Flow
+- [x] Branch graph: interpretations as nodes on a branch, visual state per status
+- [x] "Resolve" action: select interpretation to confirm, call `/api/branch/:id/resolve`
+- [x] Visual update: confirmed = highlighted, ruled-out = greyed but visible — never removed
+- [x] Add-interpretation-to-branch flow
 
 ### Sub-phase 5.4 — Log & Blame Views
-- [ ] Log view: chronological timeline component consuming `/api/patient/:id/log`
-- [ ] Blame view: given a decision, render the traced chain visually (not JSON)
-- [ ] Chain rendering: decision → interpretation → prior superseded → facts → doctor
-- [ ] Make the chain visually obvious for live demo
-
----
-
-## Phase 6 — Demo Prep
-
-**Tools:** A seed script (`scripts/seed.ts`), no new dependencies.
-
-### Sub-phase 6.1 — Seed Script
-- [x] Implement `scripts/seed.ts`
-- [x] Clear database safely
-- [x] Insert mock doctors
-- [x] Insert mock patient
-- [x] Create a linear chain (Fact → Interpretation → Decision)
-- [x] Create a branched chain (Competing Interpretations)
-- [x] Resolve the branch
-- [x] Verify script runs without error and data appears in UI
-
-**Completed:** 2026-08-19 — Implemented scripts/seed.ts and scripts/clear.ts to fully populate a realistic medical case (Maria Santos) exercising branches, supersedes, and decisions. Script was executed and verified.
-- [ ] Data must look clinical, not test-like ("HbA1c 8.4%", not "test-fact-1")
-
-### Sub-phase 6.2 — Rehearsal & Q&A Prep
-- [ ] Full demo click-through: seed → branch with competing diagnoses → resolve → decision → blame
-- [ ] Written answer: "why not FHIR Provenance" — per prd.md §9
-- [ ] Written answer: "who can retract a diagnosis" — per architecture.md §3 / prd.md §8
-- [ ] Time the walkthrough twice minimum
+- [x] Log view: chronological timeline component consuming `/api/patient/:id/log`
+- [x] Blame view: given a decision, render the traced chain visually (not JSON)
+- [x] Chain rendering: decision → interpretation → prior superseded → facts → doctor
+- [x] Make the chain visually obvious for live demo
 
 ---
 

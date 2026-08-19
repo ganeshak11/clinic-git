@@ -26,7 +26,7 @@ If you're an AI agent picking this up, read `AGENTS.md` first, not this file.
 | `docs/practice/codeexamples.md` | Bug-finding practice exercises — 10 planted bugs that the sub-phase plans explicitly prevent. |
 | `CHANGELOG.md` | Build progress — each sub-phase gets a completion entry with what was built and verified. |
 
-## Build phases (19 sub-phases)
+## Build phases (17 sub-phases)
 
 | Phase | Sub-phases | Key deliverable |
 |-------|-----------|-----------------|
@@ -36,7 +36,6 @@ If you're an AI agent picking this up, read `AGENTS.md` first, not this file.
 | **3 — Blame** | S1 Blame Query, S2 Log + Tests | Reasoning-chain trace |
 | **4 — Decisions** | S1 Create, S2 Transitions, S3 Blame Retarget | Decision lifecycle |
 | **5 — UI** | S1 Design System, S2 Patient, S3 Branch, S4 Log/Blame | Frontend |
-| **6 — Demo Prep** | S1 Seed Script, S2 Rehearsal | Demo readiness |
 
 ## Quick start
 

@@ -2,7 +2,7 @@
 
 Companion to `prd.md` and `architecture.md`. This breaks the locked build order (architecture.md §6) into phases and sub-phases with a clear exit criterion each — a phase isn't "done" until its criterion is demonstrably true, not just "code written."
 
-Seven phases (0–6), broken into 19 sub-phases. Phases 1-4 are backend/data-model only — no UI. This is deliberate: the graph model is the entire value proposition, and building UI before the model is proven risks polishing screens around a data structure that still needs to change.
+Six phases (0–5), broken into 17 sub-phases. Phases 1-4 are backend/data-model only — no UI. This is deliberate: the graph model is the entire value proposition, and building UI before the model is proven risks polishing screens around a data structure that still needs to change.
 
 Each sub-phase has its own implementation plan in `docs/plans/implementation_plan_p{phase}_s{sub}.md`.
 
@@ -134,23 +134,7 @@ This phase is the one place where getting the data model wrong is expensive late
 **Exit criterion:** Log view shows a chronological timeline of all clinical events. Blame view, given a Decision, renders the full traced chain (decision → interpretation → prior superseded → facts → doctor) in a visually obvious, non-JSON format. A reviewer with no context can follow the chain.
 **Plan:** `docs/plans/implementation_plan_p5_s4.md`
 
----
-
-## Phase 6 — Demo Prep
-
-**Goal:** Not a build phase — a rehearsal phase.
-
-### Sub-phase 6.1 — Seed Script
-**Goal:** `scripts/seed.ts` producing a realistic patient case with all features exercised.
-**Exit criterion:** Running the seed script against a clean Neo4j instance creates: a patient with facts, a resolved branch (2-3 ruled-out + 1 confirmed interpretation), a decision, and at least one superseded interpretation in the chain. The data is realistic-looking, not "test1"/"test2".
-**Plan:** `docs/plans/implementation_plan_p6_s1.md`
-
-### Sub-phase 6.2 — Rehearsal & Q&A Prep
-**Goal:** Dry-run the full demo walkthrough, prepare answers for expected questions.
-**Exit criterion:** Full demo path runs end-to-end from a cold seed in under the allotted time, with no database fixes needed mid-demo. Written answers to "why not FHIR Provenance" and "who can retract a diagnosis" are prepared.
-**Plan:** `docs/plans/implementation_plan_p6_s2.md`
-
----
+--
 
 ## What's not a phase
 
