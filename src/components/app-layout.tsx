@@ -60,11 +60,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     const isActive = pathname.startsWith(item.url)
                     return (
                       <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                          <Link href={item.url}>
-                            <item.icon className="h-4 w-4" />
-                            <span>{item.title}</span>
-                          </Link>
+                        <SidebarMenuButton render={<Link href={item.url} />} isActive={isActive} tooltip={item.title}>
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     )
